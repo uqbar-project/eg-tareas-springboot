@@ -8,8 +8,8 @@ import ar.edu.tareas.domain.Usuario
 class Bootstrap {
 
 	def void run() {
-		crearTareas
 		crearUsuarios
+		crearTareas
 	}
 
 	def void crearTareas() {

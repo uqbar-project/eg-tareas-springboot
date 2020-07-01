@@ -81,6 +81,7 @@ class Tarea extends Entity {
 
 	def asignarA(Usuario usuario) {
 		this.asignatario = usuario
+		usuario.asignarTarea(this)
 	}
 
 	@JsonProperty("fecha")
