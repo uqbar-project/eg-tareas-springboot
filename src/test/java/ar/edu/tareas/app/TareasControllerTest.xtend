@@ -2,6 +2,7 @@ package ar.edu.tareas.app
 
 import ar.edu.tareas.controller.TareasController
 import ar.edu.tareas.domain.Tarea
+import ar.edu.tareas.domain.Usuario
 import ar.edu.tareas.repos.RepoTareas
 import ar.edu.tareas.repos.RepoUsuarios
 import com.fasterxml.jackson.databind.DeserializationFeature
@@ -9,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import java.time.LocalDate
 import java.util.List
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -23,8 +25,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.AfterEach
-import ar.edu.tareas.domain.Usuario
 
 @AutoConfigureJsonTesters
 @ContextConfiguration(classes=TareasController)
@@ -36,12 +36,15 @@ class TareasControllerTest {
 	@Autowired
 	MockMvc mockMvc
 	RepoTareas repoTareas = RepoTareas.instance
-	Usuario usuario = RepoUsuarios.instance.getAsignatario("Juan Contardo")
+	RepoUsuarios repoUsuarios = RepoUsuarios.instance
+	Usuario usuario
 	Tarea tarea
 	Tarea tarea2
 
 	@BeforeEach
 	def void init() {
+		usuario = new Usuario => [ id = 1 nombre = "Juan Contardo"]
+		repoUsuarios.create(usuario)
 		tarea = repoTareas.crearTarea(getTarea => [id = 1])
 		tarea2 = repoTareas.crearTarea(getTarea => [
 			id = 2
@@ -54,6 +57,7 @@ class TareasControllerTest {
 
 	@AfterEach
 	def void after() {
+		repoUsuarios.delete(usuario)
 		repoTareas.delete(tarea)
 		repoTareas.delete(tarea2)
 	}
