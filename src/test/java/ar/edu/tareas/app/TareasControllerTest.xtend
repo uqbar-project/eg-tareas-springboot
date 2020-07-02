@@ -43,11 +43,10 @@ class TareasControllerTest {
 	def void init() {
 		repoUsuarios.objects.clear
 		repoTareas.objects.clear
-		usuario = new Usuario => [id = 1 nombre = "Juan Contardo"]
+		usuario = new Usuario("Juan Contardo")
 		repoUsuarios.create(usuario)
-		tarea = repoTareas.crearTarea(getTarea => [id = 1])
+		tarea = repoTareas.crearTarea(getTarea)
 		repoTareas.crearTarea(getTarea => [
-			id = 2
 			descripcion = "Implementar single sign on desde la extranet"
 			fecha = LocalDate.of(2018, 9, 9)
 			iteracion = "Iteracion 1"
@@ -125,7 +124,8 @@ class TareasControllerTest {
 	def void testActualizarUnaTareaDistintosIdsException() {
 		val tareaBody = getTarea => [id = tarea.id]
 		val responseEntityPut = mockMvc.perform(
-			MockMvcRequestBuilders.put("/tareas/250").content(mapper.writeValueAsString(tareaBody))).andReturn.response
+			MockMvcRequestBuilders.put("/tareas/" + (tarea.id + 1)).content(mapper.writeValueAsString(tareaBody))).
+			andReturn.response
 		assertEquals(400, responseEntityPut.status)
 	}
 
