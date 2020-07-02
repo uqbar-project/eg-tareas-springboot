@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.server.ResponseStatusException
 
 @RestController
 class TareasController {
@@ -24,7 +23,7 @@ class TareasController {
 			val tareas = RepoTareas.instance.allInstances
 			ResponseEntity.ok(mapper.writeValueAsString(tareas))
 		} catch (Exception e) {
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.message)
+			ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
 		}
 	}
 
@@ -34,7 +33,7 @@ class TareasController {
 			val tarea = RepoTareas.instance.searchById(id)
 			ResponseEntity.ok(mapper.writeValueAsString(tarea))
 		} catch (RuntimeException e) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.message)
+			ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.message)
 		}
 	}
 
@@ -49,15 +48,14 @@ class TareasController {
 	def actualizar(@RequestBody String body, @PathVariable Integer id) {
 		try {
 			val actualizada = mapper.readValue(body, Tarea)
-
+			
 			if (id != actualizada.id) {
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					'{ "error" : "Id en URL distinto del cuerpo" }')
+				return ResponseEntity.badRequest.body('{ "error" : "Id en URL distinto del cuerpo" }')
 			}
 			RepoTareas.instance.update(actualizada)
-			ResponseEntity.ok("Se actualizó la tarea correctamente")
+			ResponseEntity.ok(mapper.writeValueAsString(actualizada))
 		} catch (BusinessException e) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.message)
+			ResponseEntity.badRequest.body(e.message)
 		}
 	}
 
