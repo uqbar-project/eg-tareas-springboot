@@ -39,20 +39,20 @@ class TareasController {
 		}
 	}
 
-	// Ojo con el parámetro, debe decir exactamente descripcion
 	@GetMapping(value="/tareas/search")
 	def buscar(@RequestBody String body) {
 		val tareaBusqueda = mapper.readValue(body, Tarea)
-		ResponseEntity.ok(mapper.writeValueAsString(RepoTareas.instance.searchByExample(tareaBusqueda)))
+		val encontrada = RepoTareas.instance.searchByExample(tareaBusqueda)
+		ResponseEntity.ok(mapper.writeValueAsString(encontrada))
 	}
 
 	@PutMapping(value="/tareas/{id}")
 	def actualizar(@RequestBody String body, @PathVariable Integer id) {
 		try {
 			val actualizada = mapper.readValue(body, Tarea)
-			
+
 			if (id != actualizada.id) {
-				return ResponseEntity.badRequest.body('{ "error" : "Id en URL distinto del cuerpo" }')
+				return ResponseEntity.badRequest.body('Id en URL distinto del cuerpo')
 			}
 			RepoTareas.instance.update(actualizada)
 			ResponseEntity.ok(mapper.writeValueAsString(actualizada))
