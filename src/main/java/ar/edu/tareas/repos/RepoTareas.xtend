@@ -37,6 +37,7 @@ class RepoTareas extends CollectionBasedRepo<Tarea> {
 
 	override validateCreate(Tarea tarea) {
 		tarea.validar
+		super.validateCreate(tarea)
 	}
 
 	override protected Predicate<Tarea> getCriterio(Tarea example) {
