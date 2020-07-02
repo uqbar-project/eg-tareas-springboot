@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import java.time.LocalDate
 import java.util.List
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -39,27 +38,21 @@ class TareasControllerTest {
 	RepoUsuarios repoUsuarios = RepoUsuarios.instance
 	Usuario usuario
 	Tarea tarea
-	Tarea tarea2
 
 	@BeforeEach
 	def void init() {
-		usuario = new Usuario => [ id = 1 nombre = "Juan Contardo"]
+		repoUsuarios.objects.clear
+		repoTareas.objects.clear
+		usuario = new Usuario => [id = 1 nombre = "Juan Contardo"]
 		repoUsuarios.create(usuario)
 		tarea = repoTareas.crearTarea(getTarea => [id = 1])
-		tarea2 = repoTareas.crearTarea(getTarea => [
+		repoTareas.crearTarea(getTarea => [
 			id = 2
 			descripcion = "Implementar single sign on desde la extranet"
 			fecha = LocalDate.of(2018, 9, 9)
 			iteracion = "Iteracion 1"
 			porcentajeCumplimiento = 76
 		])
-	}
-
-	@AfterEach
-	def void after() {
-		repoUsuarios.delete(usuario)
-		repoTareas.delete(tarea)
-		repoTareas.delete(tarea2)
 	}
 
 	@DisplayName("se pueden obtener todas las tareas")
@@ -75,8 +68,8 @@ class TareasControllerTest {
 	@Test
 	def void testBuscarTareasPorDescripcion() {
 		val responseEntity = mockMvc.perform(
-			MockMvcRequestBuilders.get("/tareas/search").content(mapper.writeValueAsString(getTarea))).
-			andReturn.response
+			MockMvcRequestBuilders.get("/tareas/search").content(mapper.writeValueAsString(getTarea))).andReturn.
+			response
 		val tareas = responseEntity.contentAsString.fromJsonToList(Tarea)
 		assertEquals(200, responseEntity.status)
 		assertTrue(tareas.exists[tarea|tarea.descripcion.equals(getTarea.descripcion)])
@@ -85,9 +78,10 @@ class TareasControllerTest {
 	@DisplayName("se pueden pedir tareas que tengan cierta descripcion y que no se encuentre ninguna")
 	@Test
 	def void testBuscarTareasPorDescripcionNoMatch() {
-		val tareaBusqueda = new Tarea =>[descripcion = "Esta tarea no existe"]
+		val tareaBusqueda = new Tarea => [descripcion = "Esta tarea no existe"]
 		val responseEntity = mockMvc.perform(
-			MockMvcRequestBuilders.get("/tareas/search").content(mapper.writeValueAsString(tareaBusqueda))).andReturn.response
+			MockMvcRequestBuilders.get("/tareas/search").content(mapper.writeValueAsString(tareaBusqueda))).andReturn.
+			response
 		val tareas = responseEntity.contentAsString.fromJsonToList(Tarea)
 		assertEquals(200, responseEntity.status)
 		assertTrue(tareas.isEmpty)
