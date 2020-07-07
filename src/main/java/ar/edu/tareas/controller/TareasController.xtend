@@ -41,9 +41,14 @@ class TareasController {
 
 	@GetMapping(value="/tareas/search")
 	def buscar(@RequestBody String body) {
-		val tareaBusqueda = mapper.readValue(body, Tarea)
-		val encontrada = RepoTareas.instance.searchByExample(tareaBusqueda)
-		ResponseEntity.ok(mapper.writeValueAsString(encontrada))
+		try {
+			val tareaBusqueda = mapper.readValue(body, Tarea)
+			val encontrada = RepoTareas.instance.searchByExample(tareaBusqueda)
+			ResponseEntity.ok(mapper.writeValueAsString(encontrada))
+
+		} catch (Exception e) {
+			ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
+		}
 	}
 
 	@PutMapping(value="/tareas/{id}")
