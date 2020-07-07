@@ -13,8 +13,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.json.AutoConfigureJsonTesters
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.test.annotation.DirtiesContext
-import org.springframework.test.annotation.DirtiesContext.ClassMode
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
@@ -25,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue
 @AutoConfigureJsonTesters
 @ContextConfiguration(classes=UsuariosController)
 @WebMvcTest
-@DirtiesContext(classMode=ClassMode.BEFORE_EACH_TEST_METHOD)
 @DisplayName("Dado un controller de usuarios")
 class UsuariosControllerTest {
 
