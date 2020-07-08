@@ -60,7 +60,7 @@ class TareasControllerTest {
 		assertEquals(tareas.size, 2)
 	}
 
-	@DisplayName("se pueden pedir las tareas que tengan cierta descripcion")
+	@DisplayName("se pueden pedir las tareas que contengan cierta descripcion")
 	@Test
 	def void testBuscarTareasPorDescripcion() {
 		val responseEntity = mockMvc.perform(
@@ -71,7 +71,7 @@ class TareasControllerTest {
 		assertTrue(tareas.exists[tarea|tarea.descripcion.equals(getTarea.descripcion)])
 	}
 
-	@DisplayName("se pueden pedir tareas que tengan cierta descripcion y que no se encuentre ninguna")
+	@DisplayName("se pueden pedir tareas que contengan cierta descripcion y que no se encuentre ninguna")
 	@Test
 	def void testBuscarTareasPorDescripcionNoMatch() {
 		val tareaBusqueda = new Tarea => [descripcion = "Esta tarea no existe"]
@@ -97,6 +97,7 @@ class TareasControllerTest {
 	def void testBuscarTareaPorIdException() {
 		val responseEntity = mockMvc.perform(MockMvcRequestBuilders.get("/tareas/20000")).andReturn.response
 		assertEquals(404, responseEntity.status)
+		assertEquals("No se encontró el objeto con el id: 20000", responseEntity.contentAsString)
 	}
 
 	@DisplayName("actualizar una tarea a un valor válido actualiza correctamente")
@@ -124,6 +125,7 @@ class TareasControllerTest {
 			MockMvcRequestBuilders.put("/tareas/" + (tarea.id + 1)).content(mapper.writeValueAsString(tareaBody))).
 			andReturn.response
 		assertEquals(400, responseEntityPut.status)
+		assertEquals("Id en URL distinto del cuerpo", responseEntityPut.contentAsString)
 	}
 
 	@DisplayName("si se intenta actualizar una tarea con datos inválidos se produce bad request")
@@ -134,6 +136,7 @@ class TareasControllerTest {
 			MockMvcRequestBuilders.put("/tareas/" + tarea.id).content(mapper.writeValueAsString(tareaBody))).andReturn.
 			response
 		assertEquals(400, responseEntityPut.status)
+		assertEquals("Debe ingresar descripcion", responseEntityPut.contentAsString)
 	}
 
 	def getTarea() {
