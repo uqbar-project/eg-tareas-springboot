@@ -68,9 +68,11 @@ class Tarea extends Entity {
 
 	@JsonProperty("asignadoA")
 	def void asignarA(String nuevoAsignado) {
-		val asignatario = RepoUsuarios.instance.getAsignatario(nuevoAsignado ?: "")
-		if (asignatario !== null) {
-			asignarA(asignatario)
+		if (!nuevoAsignado.nullOrEmpty) {
+			val asignatario = RepoUsuarios.instance.getAsignatario(nuevoAsignado)
+			if (asignatario !== null) {
+				asignarA(asignatario)
+			}
 		}
 	}
 
