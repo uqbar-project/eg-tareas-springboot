@@ -194,4 +194,10 @@ Una vez que se actualiza, se envía el status 200 y la tarea actualizada seriali
 
 ## Diagrama general de la arquitectura
 
+![Arquitectura tareas springboot](https://user-images.githubusercontent.com/26492157/89088307-f1368700-d36d-11ea-8397-ad3389690eec.png)
+
 # Testing
+
+En la carpeta src/test/java podrás encontrar los casos de prueba para los controllers.
+
+TODO: Explicar los tests de los controllers.
