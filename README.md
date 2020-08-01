@@ -124,7 +124,7 @@ Jackson no puede serializar a JSON la lista de tareas pendientes: Se produce una
 
 En general se busca evitar tener relaciones bidireccionales, pero cuando esto no es posible hay que buscar otra solución.
 
-En nuestro caso, decidimos ignorar el atributo "asignatario" para que el serializador lo tome en cuenta (así se evita la recursión) y en su lugar publicamos la property "asignadoA" que devuelve el nombre del asignatario.
+En nuestro caso, decidimos ignorar el atributo "asignatario" para que el serializador no lo tome en cuenta (así se evita la recursión) y en su lugar publicamos la property "asignadoA" que devuelve el nombre del asignatario.
 
 #### Controllers de Tarea - GET
 
