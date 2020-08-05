@@ -32,10 +32,16 @@ class TareasController {
 	@GetMapping(value="/tareas/{id}")
 	def tareaPorId(@PathVariable Integer id) {
 		try {
+			if (id === 0) {
+				return ResponseEntity.badRequest.body('''Debe ingresar el parámetro id''')
+			}
 			val tarea = RepoTareas.instance.searchById(id)
+			if (tarea === null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body('''No se encontró la tarea de id <«id»>''')
+			}
 			ResponseEntity.ok(mapper.writeValueAsString(tarea))
 		} catch (RuntimeException e) {
-			ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.message)
+			ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
 		}
 	}
 
@@ -45,7 +51,6 @@ class TareasController {
 			val tareaBusqueda = mapper.readValue(body, Tarea)
 			val encontrada = RepoTareas.instance.searchByExample(tareaBusqueda)
 			ResponseEntity.ok(mapper.writeValueAsString(encontrada))
-
 		} catch (Exception e) {
 			ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
 		}
@@ -54,15 +59,20 @@ class TareasController {
 	@PutMapping(value="/tareas/{id}")
 	def actualizar(@RequestBody String body, @PathVariable Integer id) {
 		try {
+			if (id === null || id === 0) {
+				return ResponseEntity.badRequest.body('''Debe ingresar el parámetro id''')
+			}
 			val actualizada = mapper.readValue(body, Tarea)
 
 			if (id != actualizada.id) {
-				return ResponseEntity.badRequest.body('Id en URL distinto del cuerpo')
+				return ResponseEntity.badRequest.body("Id en URL distinto del id que viene en el body")
 			}
 			RepoTareas.instance.update(actualizada)
 			ResponseEntity.ok(mapper.writeValueAsString(actualizada))
 		} catch (BusinessException e) {
 			ResponseEntity.badRequest.body(e.message)
+		} catch (Exception e) {
+			ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
 		}
 	}
 

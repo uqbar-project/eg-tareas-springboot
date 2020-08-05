@@ -66,4 +66,7 @@ class RepoTareas extends CollectionBasedRepo<Tarea> {
 		super.update(tarea)
 	}
 
+	override searchById(int id) {
+		this.allInstances.findFirst [ tarea | tarea.id === id ]
+	}
 }
