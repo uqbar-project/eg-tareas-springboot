@@ -143,12 +143,18 @@ def tareas() {
 
 @GetMapping(value="/tareas/{id}")
 def tareaPorId(@PathVariable Integer id) {
-    try {
-        val tarea = RepoTareas.instance.searchById(id)
-        ResponseEntity.ok(mapper.writeValueAsString(tarea))
-    } catch (RuntimeException e) {
-        ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.message)
-    }
+	try {
+		if (id === 0) {
+			return ResponseEntity.badRequest.body('''Debe ingresar el parámetro id''')
+		}
+		val tarea = RepoTareas.instance.searchById(id)
+		if (tarea === null) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body('''No se encontró la tarea de id <«id»>''')
+		}
+		ResponseEntity.ok(mapper.writeValueAsString(tarea))
+	} catch (RuntimeException e) {
+		ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
+	}
 }
 ```
 
@@ -159,6 +165,14 @@ La annotation @GetMapping(value="/tareas") define
 
 La búsqueda 1) se delega al repositorio, y la respuesta 2) se serializa a JSON en base a las definiciones del objeto de negocio (usando una instancia del ObjectMapper de Jackson). Por último, 3) el método ok devuelve un estado http 200 + el JSON con la lista de tareas.
 
+En el caso de la búsqueda específica, los códigos de respuesta http son:
+
+- `200`: si todo sale ok
+- `400 - bad request`: faltan parámetros
+- `404 - not found`: si buscamos una tarea cuyo identificador no existe
+- `500 - internal server error`: será un error de programación
+
+Esto lo podemos ver en los tests.
 
 #### Controllers de Tarea - PUT
 
@@ -167,17 +181,22 @@ Ahora veremos el método que permite actualizar una tarea:
 ```xtend
 @PutMapping(value="/tareas/{id}")
 def actualizar(@RequestBody String body, @PathVariable Integer id) {
-    try {
-        val actualizada = mapper.readValue(body, Tarea)
-        
-        if (id != actualizada.id) {
-          return ResponseEntity.badRequest.body('Id en URL distinto del cuerpo')
-        }
-        RepoTareas.instance.update(actualizada)
-        ResponseEntity.ok(mapper.writeValueAsString(actualizada))
-    } catch (BusinessException e) {
-        ResponseEntity.badRequest.body(e.message)
-    }
+	try {
+		if (id === null || id === 0) {
+			return ResponseEntity.badRequest.body('''Debe ingresar el parámetro id''')
+		}
+		val actualizada = mapper.readValue(body, Tarea)
+
+		if (id != actualizada.id) {
+			return ResponseEntity.badRequest.body("Id en URL distinto del id que viene en el body")
+		}
+		RepoTareas.instance.update(actualizada)
+		ResponseEntity.ok(mapper.writeValueAsString(actualizada))
+	} catch (BusinessException e) {
+		ResponseEntity.badRequest.body(e.message)
+	} catch (Exception e) {
+		ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
+	}
 }
 ```
 
@@ -190,7 +209,7 @@ La implementación del método actualizar requiere transformar el body (JSON) al
 
 Una va a asignarle al atributo fecha la fecha que vino convertida a LocalDate. La otra va a buscar el asginatario en el repo de usuarios y asignarlo al atributo asignatario.
 
-Una vez que se actualiza, se envía el status 200 y la tarea actualizada serializada a JSON. En caso de haber un error, o bien si no se encuentra el elemento a actualizar, dado que no podemos tirar una excepción dentro del contexto del server, devolvemos un status 400 (Bad Request).
+Una vez que se actualiza, se envía el status 200 y la tarea actualizada serializada a JSON. En caso de haber un error, o bien si no se encuentra el elemento a actualizar, dado que no podemos tirar una excepción dentro del contexto del server, devolvemos un status 400 (Bad Request). Cualquier otra excepción que no es del negocio, es un error de programa, corresponde devolver 500 (internal server error).
 
 ## Diagrama general de la arquitectura
 
@@ -198,6 +217,8 @@ Una vez que se actualiza, se envía el status 200 y la tarea actualizada seriali
 
 # Testing
 
-En la carpeta src/test/java podrás encontrar los casos de prueba para los controllers.
+En la carpeta src/test/java podrás encontrar los casos de prueba para los controllers. Por ejemplo, para la búsqueda de una tarea puntual tendremos los siguientes escenarios:
 
-TODO: Explicar los tests de los controllers.
+- una búsqueda de una tarea que existe, debe devolver toda la información de la tarea
+- una búsqueda de una tarea que no existe, debe devolver código 404 (not found). Chequear por el mensaje de error específico puede ser contraproducente para hacerlo mantenible, solo lo dejamos con fines didácticos (en una aplicación comercial podría ser mejor no agregar ese assert)
+- una búsqueda sin id, debe devolver código 400 (bad request).
