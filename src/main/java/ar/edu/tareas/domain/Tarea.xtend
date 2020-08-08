@@ -2,13 +2,17 @@ package ar.edu.tareas.domain
 
 import ar.edu.tareas.errors.BusinessException
 import ar.edu.tareas.repos.RepoUsuarios
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonProperty
+import ar.edu.tareas.serializer.TareaDeserializer
+import ar.edu.tareas.serializer.TareaSerializer
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.uqbar.commons.model.Entity
 
+@JsonSerialize(using=TareaSerializer)
+@JsonDeserialize(using=TareaDeserializer)
 @Accessors
 class Tarea extends Entity {
 	static int TAREA_COMPLETA = 100
@@ -17,8 +21,8 @@ class Tarea extends Entity {
 	String descripcion
 	String iteracion
 	int porcentajeCumplimiento
-	@JsonIgnore Usuario asignatario
-	@JsonIgnore LocalDate fecha
+	Usuario asignatario
+	LocalDate fecha
 
 	new() {
 		initialize()
@@ -58,7 +62,6 @@ class Tarea extends Entity {
 		descripcion
 	}
 
-	@JsonProperty("asignadoA")
 	def String getAsignadoA() {
 		if (asignatario === null) {
 			return ""
@@ -66,7 +69,6 @@ class Tarea extends Entity {
 		asignatario.nombre
 	}
 
-	@JsonProperty("asignadoA")
 	def void asignarA(String nuevoAsignado) {
 		if (!nuevoAsignado.nullOrEmpty) {
 			val asignatario = RepoUsuarios.instance.getAsignatario(nuevoAsignado)
@@ -76,7 +78,6 @@ class Tarea extends Entity {
 		}
 	}
 
-	@JsonProperty("fecha")
 	def getFechaAsString() {
 		formatter.format(this.fecha)
 	}
@@ -86,12 +87,11 @@ class Tarea extends Entity {
 		usuario.asignarTarea(this)
 	}
 
-	@JsonProperty("fecha")
 	def asignarFecha(String fecha) {
 		this.fecha = LocalDate.parse(fecha, formatter)
 	}
 
-	def formatter() {
+	def static formatter() {
 		DateTimeFormatter.ofPattern(DATE_PATTERN)
 	}
 

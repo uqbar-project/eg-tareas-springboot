@@ -1,224 +1,123 @@
 # Spring Boot - Tareas pendientes de un equipo de Desarrollo
 
-[![Build Status](https://travis-ci.com/uqbar-project/eg-tareas-springboot.svg?branch=master)](https://travis-ci.com/uqbar-project/eg-tareas-springboot)
+[![Build Status](https://travis-ci.com/uqbar-project/eg-tareas-springboot.svg?branch=custom-serializer)](https://travis-ci.com/uqbar-project/eg-tareas-springboot)
 
-## Dominio
+## Otros mecanismos de serialización
 
-Este ejemplo permite actualizar y mostrar las tareas pendientes que tiene un equipo de desarrollo. Los objetos de dominio involucrados son:
+### Custom serializer
 
-- tareas, a las que le hacemos un seguimiento y las asignamos a
-- usuarios, que tienen una lista de tareas asignadas
-
-![image](https://user-images.githubusercontent.com/26492157/88970492-e229d900-d288-11ea-98ee-8fdba8822a29.png)
-
-Vemos que hay una relación bidireccional entre Tarea y Usuario
-
-## Servicios REST
-
-En TareasApplication levantamos el servidor [Tomcat](https://tomcat.apache.org/). 
+En esta variante vemos cómo definir un serializador _custom_ para las tareas. Generamos un TareaSerializer que hereda del serializador estándar que nos provee Spring:
 
 ```xtend
- def static void main(String[] args) {
-     new Bootstrap => [run]
-     SpringApplication.run(TareasApplication, args)
- }
+class TareaSerializer extends StdSerializer<Tarea> {
+	
+	new() {
+		super(Tarea)
+	}
+	
+	override serialize(Tarea tarea, JsonGenerator gen, SerializerProvider provider) throws IOException {
+		gen => [
+			writeStartObject
+			writeNumberField("id", tarea.id)
+			writeStringField("descripcion", tarea.descripcion)
+			if (tarea.asignatario !== null) {
+				writeStringField("asignadoA", tarea.asignatario.nombre)
+			}
+			writeStringField("iteracion", tarea.iteracion)
+			writeNumberField("porcentajeCumplimiento", tarea.porcentajeCumplimiento)
+			writeStringField("fecha", DateTimeFormatter.ofPattern("dd/MM/yyyy").format(tarea.fecha))
+			writeEndObject
+		]
+	}
+	
+}
 ```
 
-Por defecto va a levantar en el puerto 8080, pero lo modificamos en el archivo application.properties:
+- En la clase Tarea, le asociamos nuestro serializador _custom_:
 
-`server.port=9000`
-
-Los controllers que tenemos disponibles son UsuariosController y TareasController.
-
-
-### Cómo levantar el servidor REST
-
-Las opciones para probarlo (ya sea con POSTMAN o una aplicación cliente) son las siguientes:
-
-- desde el Eclipse, seleccionar TareasApplication.xtend y con botón derecho ejecutar la opción: Run As > Java Application 
-- o bien desde la línea de comando (cmd/PowerShell/Git Bash o una terminal de Linux) ejecutar la siguiente instrucción
-
-```
-mvn spring-boot:run
-
+```xtend
+@JsonSerialize(using=TareaSerializer)
+@Accessors
+class Tarea extends Entity {
 ```
 
-Entonces visualizarán en la consola el log del servidor levantado:
+Como resultado, desaparecen las anotaciones `@JsonIgnore` y `@JsonProperty` dentro de la clase Tarea.
 
-![tomcat-server-started](https://user-images.githubusercontent.com/26492157/88977567-88c7a700-d294-11ea-82a6-7e68895cd1b9.PNG)
+### Comparación con @Annotations
 
-### Rutas
+Esto nos permite devolver la lista de tareas satisfactoriamente, porque generamos un JSON propio. Tenemos un gran control sobre el algoritmo de serialización. Podemos alterar el orden en el que construimos cada atributo, por ejemplo podemos alternar las líneas fecha y porcentajeCumplimiento:
 
-Con un cliente HTTP como Postman, pueden disparar pedidos al servidor. Por ejemplo, para listar las tareas pendientes:
+```xtend
+	writeStringField("fecha", DateTimeFormatter.ofPattern("dd/MM/yyyy").format(tarea.fecha))
+	writeNumberField("porcentajeCumplimiento", tarea.porcentajeCumplimiento)
+```
 
-- Pedido GET
-- URL http://localhost:9000/tareas
+Y eso produce el cambio en nuestro output:
 
-![postman-get-tareas](https://user-images.githubusercontent.com/26492157/88985267-2c6d8300-d2a6-11ea-8225-3176558ea645.gif)
+![alterar el orden del JSON](./images/alterarOrdenJSON.png)
 
-Pero también para ver los datos de una tarea en particular, como la que tiene el identificador 1 (que en Spring Boot se define como parámetro {id}):
+Por otra parte, la solución utilizando annotations de Jackson (`@JsonProperty`, `@JsonIgnore`) requiere **escribir mucho menos código** (algo que tiene que ver con un concepto que verán más adelante en la materia Paradigmas de Programación, que es la _declaratividad_). La declaratividad nos permite expresar "esta propiedad no la tomes en cuenta" o "esta propiedad se llama de esta otra manera", y delegar en un motor el algoritmo de serialización/deserialización. Esto es conveniente ya que tenemos que pensar en menos cosas, por otra parte tenemos menos control sobre el algoritmo, algo que en algunos casos podemos necesitar. Por último, una ventaja de tener el serializador/deserializador custom es que la clase de negocio Tarea no se ve ensuciada con anotaciones que necesita otro _concern_ (el controller para devolver información).
 
-- Pedido GET
-- URL http://localhost:9000/tareas/1
+### Deserialización
 
-![postman-get-tarea-id](https://user-images.githubusercontent.com/26492157/88985269-2e374680-d2a6-11ea-964e-d29686c087b5.gif)
+Para que funcione correctamente la asignación y marcar una tarea como cumplida, tenemos que armar un deserializador _custom_:
 
-Para modificar una tarea, podemos hacer un pedido PUT que contenga la nueva información de la tarea. Esto lo podemos hacer copiando el JSON que nos devuelve como respuesta la ruta http://localhost:9000/tareas/1 y pegándolo en el body de nuestro request PUT. El siguiente gif ilustra esta situación:
+```xtend
+class TareaDeserializer extends StdDeserializer<Tarea> {
+	
+	new() {
+		super(Tarea)
+	}
+	
+	override deserialize(JsonParser parser, DeserializationContext context) throws IOException, JsonProcessingException {
+		val node = parser.readValueAsTree
+		new Tarea => [
+			id = (node.get("id") as IntNode).asInt
+			descripcion = (node.get("descripcion") as TextNode).asText
+			iteracion = (node.get("iteracion") as TextNode).asText
+			porcentajeCumplimiento = (node.get("porcentajeCumplimiento") as IntNode).asInt
+			asignatario = RepoUsuarios.instance.getAsignatario((node.get("asignadoA") as TextNode).asText)
+			val fechaTarea = (node.get("fecha") as TextNode).asText
+			fecha = LocalDate.parse(fechaTarea, Tarea.formatter)
+		]
+	}
+	
+}
+```
 
-![postman-put-tarea](https://user-images.githubusercontent.com/26492157/88985275-3099a080-d2a6-11ea-838f-97b9f0cb57f1.gif)
+Y también hay que configurarlo en la clase Tarea:
 
+```xtend
+@JsonSerialize(using=TareaSerializer)
+@JsonDeserialize(using=TareaDeserializer)
+@Accessors
+class Tarea extends Entity {
+```
 
-### Implementación
+El deserializador necesita manejar correctamente
 
-#### Objeto de dominio Tarea
+- la relación bidireccional Tarea/Usuario que puede hacernos entrar en loop si mantenemos serializadores por defecto y sin annotations
+- la fecha (si intentamos usar el serializador de fechas por defecto nos aparecerá un error bastante feo)
 
-Es interesante ver la definición **del objeto de negocio Tarea** ya que en lugar de publicar la propiedad fecha como un LocalDate, lo hace como String formateándolo a día/mes/año. Esto se logra mediante dos anotaciones: @JsonIgnore para el atributo fecha (para que el serializador no lo tome en cuenta), y @JsonProperty con el nombre de la propiedad a publicar. Vemos a continuación cómo es la definición en el código:
+La solución es un poco áspera, porque tenemos que convertir el JSON a un tipo concreto: String, int, fecha, Usuario. Nuevamente, lo interesante es tener varias soluciones para poder compararlas.
+
+## Otras variantes a la hora de serializar objetos
+
+Otra opción es diseñar un objeto específico para transferir información del backend hacia el frontend (y viceversa), un **Data Transformation Object** (DTO). En el caso del Usuario podría ser algo como:
 
 ```xtend
 @Accessors
-class Tarea extends Entity {
-	static String DATE_PATTERN = "dd/MM/yyyy"
-	...
-	@JsonIgnore LocalDate fecha
-
-	...
-	
-	@JsonProperty("fecha")
-	def getFechaAsString() {
-		formatter.format(this.fecha)
-	}
-	
-	def formatter() {
-		DateTimeFormatter.ofPattern(DATE_PATTERN)
-	}
+class UsuarioDTO
+	String nombre
 ```
 
-Del mismo modo, la propiedad asignatario se oculta para publicar otra llamada "asignadoA" que es un String:
+El objetivo sería que nuestro contoller convierta un Usuario a UsuarioDTO y luego el object mapper de SpringBoot tomaría los getters como las propiedades que debe exponer en el JSON que devolvamos por ejemplo para mostrar la lista de usuarios que pueden resolver una tarea. Esta opción tampoco ensucia al objeto de negocio Tarea, pero tiene la desventaja de que hay un objeto DTO paralelo por cada objeto de negocio que queremos publicar.
 
-```xtend
-@Accessors
-class Tarea extends Entity {
-	@JsonIgnore Usuario asignatario
-	...
-  
-	@JsonProperty("asignadoA")
-	def String getAsignadoA() {
-		if (asignatario === null) {
-			return ""
-		}
-		asignatario.nombre
-	}
-}
-```
-Surgen las preguntas: ¿por qué?, ¿es necesario?. 
+## Resumen
 
-Probamos quitando la anotación `@JsonIgnore` que está al lado del atributo asignatario.
+La variante default de trabajar con un serializador estándar y anotaciones para exportar o importar objetos con Springboot suele ser suficiente para la mayoría de los casos. Para las excepciones está bueno conocer las otras variantes posibles:
 
-Y guardamos (no hace falta parar y volver a levantar la aplicación, gracias al LiveReload de Spring Boot).
+- tener un serializador custom
+- utilizar DTOs
 
-Parece que va todo bien, hasta que volvemos a pedir las tareas desde Postman:
-
-![postman-infinite-recursion](https://user-images.githubusercontent.com/26492157/88987001-ec5ccf00-d2aa-11ea-8674-839870ffc36d.PNG)
-
-Jackson no puede serializar a JSON la lista de tareas pendientes: Se produce una recursión infinita dada la relación bidireccional entre Tarea y Usuario, generando `StackOverflowError`.
-
-En general se busca evitar tener relaciones bidireccionales, pero cuando esto no es posible hay que buscar otra solución.
-
-En nuestro caso, decidimos ignorar el atributo "asignatario" para que el serializador no lo tome en cuenta (así se evita la recursión) y en su lugar publicamos la property "asignadoA" que devuelve el nombre del asignatario.
-
-#### Controllers de Tarea - GET
-
-Veamos los métodos get:
-
-```xtend
-@GetMapping(value="/tareas")
-def tareas() {
-    try {
-        val tareas = RepoTareas.instance.allInstances
-        ResponseEntity.ok(mapper.writeValueAsString(tareas))
-    } catch (Exception e) {
-        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
-    }
-}
-
-@GetMapping(value="/tareas/{id}")
-def tareaPorId(@PathVariable Integer id) {
-	try {
-		if (id === 0) {
-			return ResponseEntity.badRequest.body('''Debe ingresar el parámetro id''')
-		}
-		val tarea = RepoTareas.instance.searchById(id)
-		if (tarea === null) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body('''No se encontró la tarea de id <«id»>''')
-		}
-		ResponseEntity.ok(mapper.writeValueAsString(tarea))
-	} catch (RuntimeException e) {
-		ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
-	}
-}
-```
-
-La annotation @GetMapping(value="/tareas") define 
-
-- que utilizará el método http GET
-- para la ruta "/tareas" desde el servidor donde se publique el _jar_ (por eso para invocarla desde Postman es http://localhost:9000/tareas)
-
-La búsqueda 1) se delega al repositorio, y la respuesta 2) se serializa a JSON en base a las definiciones del objeto de negocio (usando una instancia del ObjectMapper de Jackson). Por último, 3) el método ok devuelve un estado http 200 + el JSON con la lista de tareas.
-
-En el caso de la búsqueda específica, los códigos de respuesta http son:
-
-- `200`: si todo sale ok
-- `400 - bad request`: faltan parámetros
-- `404 - not found`: si buscamos una tarea cuyo identificador no existe
-- `500 - internal server error`: será un error de programación
-
-Esto lo podemos ver en los tests.
-
-#### Controllers de Tarea - PUT
-
-Ahora veremos el método que permite actualizar una tarea:
-
-```xtend
-@PutMapping(value="/tareas/{id}")
-def actualizar(@RequestBody String body, @PathVariable Integer id) {
-	try {
-		if (id === null || id === 0) {
-			return ResponseEntity.badRequest.body('''Debe ingresar el parámetro id''')
-		}
-		val actualizada = mapper.readValue(body, Tarea)
-
-		if (id != actualizada.id) {
-			return ResponseEntity.badRequest.body("Id en URL distinto del id que viene en el body")
-		}
-		RepoTareas.instance.update(actualizada)
-		ResponseEntity.ok(mapper.writeValueAsString(actualizada))
-	} catch (BusinessException e) {
-		ResponseEntity.badRequest.body(e.message)
-	} catch (Exception e) {
-		ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
-	}
-}
-```
-
-La annotation @PutMapping define la ruta "/tareas/{id}" como método http PUT. Los parámetros que se le inyectan son:
-
-- el identificador o id, dentro de la ruta, puesto entre llaves ({id}). Para el caso de http://localhost:9000/tareas/2, el valor 2 se asigna al parametro id del método actualizar. La anotación @PathVariable indicá que el paramétro id va a estar ligado a un parámetro de la URL.
-- por otra parte, la annotation @RequestBody dentro del parámetro del método actualizar permite recibir un JSON y asignarlo a la variable body. 
-
-La implementación del método actualizar requiere transformar el body (JSON) al objeto Tarea. Así como agregamos dos properties para la serialización de una Tarea (fecha y asignadoA), también agregamos otras dos properties con el mismo nombre para la deserialización. 
-
-Una va a asignarle al atributo fecha la fecha que vino convertida a LocalDate. La otra va a buscar el asginatario en el repo de usuarios y asignarlo al atributo asignatario.
-
-Una vez que se actualiza, se envía el status 200 y la tarea actualizada serializada a JSON. En caso de haber un error, o bien si no se encuentra el elemento a actualizar, dado que no podemos tirar una excepción dentro del contexto del server, devolvemos un status 400 (Bad Request). Cualquier otra excepción que no es del negocio, es un error de programa, corresponde devolver 500 (internal server error).
-
-## Diagrama general de la arquitectura
-
-![Arquitectura tareas springboot](https://user-images.githubusercontent.com/26492157/89088307-f1368700-d36d-11ea-8397-ad3389690eec.png)
-
-# Testing
-
-En la carpeta src/test/java podrás encontrar los casos de prueba para los controllers. Por ejemplo, para la búsqueda de una tarea puntual tendremos los siguientes escenarios:
-
-- una búsqueda de una tarea que existe, debe devolver toda la información de la tarea
-- una búsqueda de una tarea que no existe, debe devolver código 404 (not found). Chequear por el mensaje de error específico puede ser contraproducente para hacerlo mantenible, solo lo dejamos con fines didácticos (en una aplicación comercial podría ser mejor no agregar ese assert)
-- una búsqueda sin id, debe devolver código 400 (bad request).
+son algunas de estas alternativas, de las cuales hemos analizado sus consecuencias positivas y negativas.
