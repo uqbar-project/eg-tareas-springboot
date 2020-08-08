@@ -49,8 +49,8 @@ class TareasController {
 	def buscar(@RequestBody String body) {
 		try {
 			val tareaBusqueda = mapper.readValue(body, Tarea)
-			val encontrada = RepoTareas.instance.searchByExample(tareaBusqueda)
-			ResponseEntity.ok(mapper.writeValueAsString(encontrada))
+			val encontradas = RepoTareas.instance.searchByExample(tareaBusqueda)
+			ResponseEntity.ok(mapper.writeValueAsString(encontradas))
 		} catch (Exception e) {
 			ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
 		}

@@ -18,14 +18,16 @@ class TareaSerializer extends StdSerializer<Tarea> {
 	override serialize(Tarea tarea, JsonGenerator gen, SerializerProvider provider) throws IOException {
 		gen => [
 			writeStartObject
-			writeNumberField("id", tarea.id)
+			if (tarea.id !== null) {
+				writeNumberField("id", tarea.id)
+			}
 			writeStringField("descripcion", tarea.descripcion)
 			if (tarea.asignatario !== null) {
 				writeStringField("asignadoA", tarea.asignatario.nombre)
 			}
 			writeStringField("iteracion", tarea.iteracion)
-			writeNumberField("porcentajeCumplimiento", tarea.porcentajeCumplimiento)
 			writeStringField("fecha", DateTimeFormatter.ofPattern("dd/MM/yyyy").format(tarea.fecha))
+			writeNumberField("porcentajeCumplimiento", tarea.porcentajeCumplimiento)
 			writeEndObject
 		]
 	}
@@ -56,7 +58,9 @@ Y eso produce el cambio en nuestro output:
 
 ![alterar el orden del JSON](./images/alterarOrdenJSON.png)
 
-Por otra parte, la solución utilizando annotations de Jackson (`@JsonProperty`, `@JsonIgnore`) requiere **escribir mucho menos código** (algo que tiene que ver con un concepto que verán más adelante en la materia Paradigmas de Programación, que es la _declaratividad_). La declaratividad nos permite expresar "esta propiedad no la tomes en cuenta" o "esta propiedad se llama de esta otra manera", y delegar en un motor el algoritmo de serialización/deserialización. Esto es conveniente ya que tenemos que pensar en menos cosas, por otra parte tenemos menos control sobre el algoritmo, algo que en algunos casos podemos necesitar. Por último, una ventaja de tener el serializador/deserializador custom es que la clase de negocio Tarea no se ve ensuciada con anotaciones que necesita otro _concern_ (el controller para devolver información).
+Por otra parte, la solución utilizando annotations de Jackson (`@JsonProperty`, `@JsonIgnore`) requiere **escribir mucho menos código**, algo que tiene que ver con un concepto que verán más adelante en la materia Paradigmas de Programación, que es la _declaratividad_. 
+
+La declaratividad nos permite expresar "esta propiedad no la tomes en cuenta" o "esta propiedad se llama de esta otra manera", y delegar en un motor el algoritmo de serialización/deserialización. Esto es conveniente ya que tenemos que pensar en menos cosas, por otra parte tenemos menos control sobre el algoritmo, algo que en algunos casos podemos necesitar. Por último, una ventaja de tener el serializador/deserializador custom es que la clase de negocio Tarea no se ve ensuciada con anotaciones que necesita otro _concern_ (el controller para devolver información).
 
 ### Deserialización
 
@@ -72,15 +76,27 @@ class TareaDeserializer extends StdDeserializer<Tarea> {
 	override deserialize(JsonParser parser, DeserializationContext context) throws IOException, JsonProcessingException {
 		val node = parser.readValueAsTree
 		new Tarea => [
-			id = (node.get("id") as IntNode).asInt
+			val nodoId = node.get("id") as IntNode
+			if (nodoId !== null) {
+				id = nodoId.asInt
+			}
 			descripcion = (node.get("descripcion") as TextNode).asText
 			iteracion = (node.get("iteracion") as TextNode).asText
-			porcentajeCumplimiento = (node.get("porcentajeCumplimiento") as IntNode).asInt
-			asignatario = RepoUsuarios.instance.getAsignatario((node.get("asignadoA") as TextNode).asText)
-			val fechaTarea = (node.get("fecha") as TextNode).asText
-			fecha = LocalDate.parse(fechaTarea, Tarea.formatter)
+			val nodoPorcentaje = node.get("porcentajeCumplimiento") as IntNode
+			if (nodoPorcentaje !== null) {
+				porcentajeCumplimiento = nodoPorcentaje.asInt
+			}
+			val nodoAsignatario = node.get("asignadoA") as TextNode
+			if (nodoAsignatario !== null) {
+				asignatario = RepoUsuarios.instance.getAsignatario(nodoAsignatario.asText)
+			}
+			val nodoFecha = node.get("fecha") as TextNode
+			if (nodoFecha !== null) {
+				fecha = LocalDate.parse(nodoFecha.asText, Tarea.formatter)
+			}
 		]
 	}
+
 	
 }
 ```

@@ -20,13 +20,24 @@ class TareaDeserializer extends StdDeserializer<Tarea> {
 	override deserialize(JsonParser parser, DeserializationContext context) throws IOException, JsonProcessingException {
 		val node = parser.readValueAsTree
 		new Tarea => [
-			id = (node.get("id") as IntNode).asInt
+			val nodoId = node.get("id") as IntNode
+			if (nodoId !== null) {
+				id = nodoId.asInt
+			}
 			descripcion = (node.get("descripcion") as TextNode).asText
 			iteracion = (node.get("iteracion") as TextNode).asText
-			porcentajeCumplimiento = (node.get("porcentajeCumplimiento") as IntNode).asInt
-			asignatario = RepoUsuarios.instance.getAsignatario((node.get("asignadoA") as TextNode).asText)
-			val fechaTarea = (node.get("fecha") as TextNode).asText
-			fecha = LocalDate.parse(fechaTarea, Tarea.formatter)
+			val nodoPorcentaje = node.get("porcentajeCumplimiento") as IntNode
+			if (nodoPorcentaje !== null) {
+				porcentajeCumplimiento = nodoPorcentaje.asInt
+			}
+			val nodoAsignatario = node.get("asignadoA") as TextNode
+			if (nodoAsignatario !== null) {
+				asignatario = RepoUsuarios.instance.getAsignatario(nodoAsignatario.asText)
+			}
+			val nodoFecha = node.get("fecha") as TextNode
+			if (nodoFecha !== null) {
+				fecha = LocalDate.parse(nodoFecha.asText, Tarea.formatter)
+			}
 		]
 	}
 	

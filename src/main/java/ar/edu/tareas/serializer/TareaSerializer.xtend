@@ -16,7 +16,9 @@ class TareaSerializer extends StdSerializer<Tarea> {
 	override serialize(Tarea tarea, JsonGenerator gen, SerializerProvider provider) throws IOException {
 		gen => [
 			writeStartObject
-			writeNumberField("id", tarea.id)
+			if (tarea.id !== null) {
+				writeNumberField("id", tarea.id)
+			}
 			writeStringField("descripcion", tarea.descripcion)
 			if (tarea.asignatario !== null) {
 				writeStringField("asignadoA", tarea.asignatario.nombre)
