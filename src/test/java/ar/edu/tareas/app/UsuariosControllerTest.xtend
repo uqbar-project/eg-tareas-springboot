@@ -2,6 +2,7 @@ package ar.edu.tareas.app
 
 import ar.edu.tareas.controller.UsuariosController
 import ar.edu.tareas.domain.Usuario
+import ar.edu.tareas.errors.RestExceptionHandler
 import ar.edu.tareas.repos.RepoUsuarios
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -10,12 +11,12 @@ import java.util.List
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.json.AutoConfigureJsonTesters
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.test.web.servlet.setup.MockMvcBuilders
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertTrue
@@ -26,8 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue
 @DisplayName("Dado un controller de usuarios")
 class UsuariosControllerTest {
 
-	@Autowired
-	MockMvc mockMvc
+	MockMvc mockMvc = MockMvcBuilders.standaloneSetup(UsuariosController).setControllerAdvice(new RestExceptionHandler).build
 	RepoUsuarios repoUsuarios = RepoUsuarios.instance
 
 	@BeforeEach

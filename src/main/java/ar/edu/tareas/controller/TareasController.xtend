@@ -1,7 +1,6 @@
 package ar.edu.tareas.controller
 
 import ar.edu.tareas.domain.Tarea
-import ar.edu.tareas.errors.BusinessException
 import ar.edu.tareas.repos.RepoTareas
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -21,59 +20,41 @@ class TareasController {
 
 	@GetMapping(value="/tareas")
 	def tareas() {
-		try {
-			val tareas = RepoTareas.instance.allInstances
-			ResponseEntity.ok(mapper.writeValueAsString(tareas))
-		} catch (Exception e) {
-			ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
-		}
+		val tareas = RepoTareas.instance.allInstances
+		ResponseEntity.ok(mapper.writeValueAsString(tareas))
 	}
 
 	@GetMapping(value="/tareas/{id}")
 	def tareaPorId(@PathVariable Integer id) {
-		try {
-			if (id === 0) {
-				return ResponseEntity.badRequest.body('''Debe ingresar el parámetro id''')
-			}
-			val tarea = RepoTareas.instance.searchById(id)
-			if (tarea === null) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body('''No se encontró la tarea de id <«id»>''')
-			}
-			ResponseEntity.ok(mapper.writeValueAsString(tarea))
-		} catch (RuntimeException e) {
-			ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
+		if (id === 0) {
+			return ResponseEntity.badRequest.body('''Debe ingresar el parámetro id''')
 		}
+		val tarea = RepoTareas.instance.searchById(id)
+		if (tarea === null) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body('''No se encontró la tarea de id <«id»>''')
+		}
+		ResponseEntity.ok(mapper.writeValueAsString(tarea))
 	}
 
 	@GetMapping(value="/tareas/search")
 	def buscar(@RequestBody String body) {
-		try {
-			val tareaBusqueda = mapper.readValue(body, Tarea)
-			val encontrada = RepoTareas.instance.searchByExample(tareaBusqueda)
-			ResponseEntity.ok(mapper.writeValueAsString(encontrada))
-		} catch (Exception e) {
-			ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
-		}
+		val tareaBusqueda = mapper.readValue(body, Tarea)
+		val encontrada = RepoTareas.instance.searchByExample(tareaBusqueda)
+		ResponseEntity.ok(mapper.writeValueAsString(encontrada))
 	}
 
 	@PutMapping(value="/tareas/{id}")
 	def actualizar(@RequestBody String body, @PathVariable Integer id) {
-		try {
-			if (id === null || id === 0) {
-				return ResponseEntity.badRequest.body('''Debe ingresar el parámetro id''')
-			}
-			val actualizada = mapper.readValue(body, Tarea)
-
-			if (id != actualizada.id) {
-				return ResponseEntity.badRequest.body("Id en URL distinto del id que viene en el body")
-			}
-			RepoTareas.instance.update(actualizada)
-			ResponseEntity.ok(mapper.writeValueAsString(actualizada))
-		} catch (BusinessException e) {
-			ResponseEntity.badRequest.body(e.message)
-		} catch (Exception e) {
-			ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
+		if (id === null || id === 0) {
+			return ResponseEntity.badRequest.body('''Debe ingresar el parámetro id''')
 		}
+		val actualizada = mapper.readValue(body, Tarea)
+
+		if (id != actualizada.id) {
+			return ResponseEntity.badRequest.body("Id en URL distinto del id que viene en el body")
+		}
+		RepoTareas.instance.update(actualizada)
+		ResponseEntity.ok(mapper.writeValueAsString(actualizada))
 	}
 
 	static def mapper() {
