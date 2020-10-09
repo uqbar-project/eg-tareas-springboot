@@ -4,7 +4,6 @@ import ar.edu.tareas.domain.Tarea
 import ar.edu.tareas.repos.RepoTareas
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.CrossOrigin
@@ -18,13 +17,13 @@ import org.springframework.web.bind.annotation.RestController
 @CrossOrigin
 class TareasController {
 
-	@GetMapping(value="/tareas")
+	@GetMapping("/tareas")
 	def tareas() {
 		val tareas = RepoTareas.instance.allInstances
-		ResponseEntity.ok(mapper.writeValueAsString(tareas))
+		ResponseEntity.ok(tareas)
 	}
 
-	@GetMapping(value="/tareas/{id}")
+	@GetMapping("/tareas/{id}")
 	def tareaPorId(@PathVariable Integer id) {
 		if (id === 0) {
 			return ResponseEntity.badRequest.body('''Debe ingresar el parámetro id''')
@@ -33,17 +32,17 @@ class TareasController {
 		if (tarea === null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body('''No se encontró la tarea de id <«id»>''')
 		}
-		ResponseEntity.ok(mapper.writeValueAsString(tarea))
+		ResponseEntity.ok(tarea)
 	}
 
-	@GetMapping(value="/tareas/search")
+	@GetMapping("/tareas/search")
 	def buscar(@RequestBody String body) {
 		val tareaBusqueda = mapper.readValue(body, Tarea)
 		val encontrada = RepoTareas.instance.searchByExample(tareaBusqueda)
-		ResponseEntity.ok(mapper.writeValueAsString(encontrada))
+		ResponseEntity.ok(encontrada)
 	}
 
-	@PutMapping(value="/tareas/{id}")
+	@PutMapping("/tareas/{id}")
 	def actualizar(@RequestBody String body, @PathVariable Integer id) {
 		if (id === null || id === 0) {
 			return ResponseEntity.badRequest.body('''Debe ingresar el parámetro id''')
@@ -54,13 +53,12 @@ class TareasController {
 			return ResponseEntity.badRequest.body("Id en URL distinto del id que viene en el body")
 		}
 		RepoTareas.instance.update(actualizada)
-		ResponseEntity.ok(mapper.writeValueAsString(actualizada))
+		ResponseEntity.ok(actualizada)
 	}
 
 	static def mapper() {
 		new ObjectMapper => [
 			configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-			configure(SerializationFeature.INDENT_OUTPUT, true)
 		]
 	}
 

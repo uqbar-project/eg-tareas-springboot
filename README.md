@@ -131,17 +131,17 @@ En nuestro caso, decidimos ignorar el atributo "asignatario" para que el seriali
 Veamos los métodos get:
 
 ```xtend
-@GetMapping(value="/tareas")
+@GetMapping("/tareas")
 def tareas() {
     try {
         val tareas = RepoTareas.instance.allInstances
-        ResponseEntity.ok(mapper.writeValueAsString(tareas))
+        ResponseEntity.ok(tareas)
     } catch (Exception e) {
         ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
     }
 }
 
-@GetMapping(value="/tareas/{id}")
+@GetMapping("/tareas/{id}")
 def tareaPorId(@PathVariable Integer id) {
 	try {
 		if (id === 0) {
@@ -151,14 +151,14 @@ def tareaPorId(@PathVariable Integer id) {
 		if (tarea === null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body('''No se encontró la tarea de id <«id»>''')
 		}
-		ResponseEntity.ok(mapper.writeValueAsString(tarea))
+		ResponseEntity.ok(tarea)
 	} catch (RuntimeException e) {
 		ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
 	}
 }
 ```
 
-La annotation @GetMapping(value="/tareas") define 
+La annotation @GetMapping("/tareas") define 
 
 - que utilizará el método http GET
 - para la ruta "/tareas" desde el servidor donde se publique el _jar_ (por eso para invocarla desde Postman es http://localhost:9000/tareas)
@@ -179,7 +179,7 @@ Esto lo podemos ver en los tests.
 Ahora veremos el método que permite actualizar una tarea:
 
 ```xtend
-@PutMapping(value="/tareas/{id}")
+@PutMapping("/tareas/{id}")
 def actualizar(@RequestBody String body, @PathVariable Integer id) {
 	try {
 		if (id === null || id === 0) {
@@ -191,7 +191,7 @@ def actualizar(@RequestBody String body, @PathVariable Integer id) {
 			return ResponseEntity.badRequest.body("Id en URL distinto del id que viene en el body")
 		}
 		RepoTareas.instance.update(actualizada)
-		ResponseEntity.ok(mapper.writeValueAsString(actualizada))
+		ResponseEntity.ok(actualizada)
 	} catch (BusinessException e) {
 		ResponseEntity.badRequest.body(e.message)
 	} catch (Exception e) {
