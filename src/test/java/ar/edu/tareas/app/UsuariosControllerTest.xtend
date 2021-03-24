@@ -2,10 +2,6 @@ package ar.edu.tareas.app
 
 import ar.edu.tareas.domain.Usuario
 import ar.edu.tareas.repos.RepoUsuarios
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import java.util.List
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -17,6 +13,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertTrue
+import static ar.edu.tareas.controller.JsonHelpers.*
 
 @AutoConfigureJsonTesters
 @WebMvcTest
@@ -44,22 +41,10 @@ class UsuariosControllerTest {
 	@Test
 	def void testGetTodosLosUsuarios() {
 		val responseEntity = mockMvc.perform(MockMvcRequestBuilders.get("/usuarios")).andReturn.response
-		val usuarios = responseEntity.contentAsString.fromJsonToList(Usuario)
+		val usuarios = fromJsonToList(responseEntity.contentAsString, Usuario)
 		assertEquals(200, responseEntity.status)
 		assertEquals(usuarios.size, 5)
 		assertTrue(usuarios.exists[usuario|usuario.nombre.equals("Fernando Dodino")])
-	}
-
-	static def <T extends Object> List<T> fromJsonToList(String json, Class<T> expectedType) {
-		val type = mapper.getTypeFactory().constructCollectionType(List, expectedType)
-		mapper.readValue(json, type)
-	}
-
-	static def mapper() {
-		new ObjectMapper => [
-			configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-			configure(SerializationFeature.INDENT_OUTPUT, true)
-		]
 	}
 
 }

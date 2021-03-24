@@ -4,8 +4,6 @@ import ar.edu.tareas.domain.Tarea
 import ar.edu.tareas.errors.BusinessException
 import ar.edu.tareas.repos.RepoTareas
 import ar.edu.tareas.repos.RepoUsuarios
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -18,10 +16,12 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 
+import static ar.edu.tareas.controller.JsonHelpers.*
+
 @RestController
 @CrossOrigin
 class TareasController {
-	
+
 	@Autowired
 	RepoTareas repoTareas
 	@Autowired
@@ -46,8 +46,7 @@ class TareasController {
 	}
 
 	@GetMapping("/tareas/search")
-	def buscar(@RequestBody String body) {
-		val tareaBusqueda = mapper.readValue(body, Tarea)
+	def buscar(@RequestBody Tarea tareaBusqueda) {
 		val encontrada = repoTareas.searchByExample(tareaBusqueda)
 		ResponseEntity.ok(encontrada)
 	}
@@ -61,9 +60,9 @@ class TareasController {
 			val actualizada = mapper.readValue(body, Tarea)
 
 			val String nombreAsignatario = mapper.readValue(body, ObjectNode).get("asignadoA").asText
-			
+
 			actualizada.asignarA(repoUsuarios.getAsignatario(nombreAsignatario))
-			
+
 			if (id != actualizada.id) {
 				throw new BusinessException("Id en URL distinto del id que viene en el body")
 			}
@@ -72,12 +71,6 @@ class TareasController {
 		} catch (BusinessException e) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.message);
 		}
-	}
-
-	static def mapper() {
-		new ObjectMapper => [
-			configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-		]
 	}
 
 }

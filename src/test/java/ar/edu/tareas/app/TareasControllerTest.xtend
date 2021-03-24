@@ -4,11 +4,7 @@ import ar.edu.tareas.domain.Tarea
 import ar.edu.tareas.domain.Usuario
 import ar.edu.tareas.repos.RepoTareas
 import ar.edu.tareas.repos.RepoUsuarios
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
 import java.time.LocalDate
-import java.util.List
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -20,6 +16,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertTrue
+import static ar.edu.tareas.controller.JsonHelpers.*
 
 @AutoConfigureJsonTesters
 @WebMvcTest
@@ -54,7 +51,7 @@ class TareasControllerTest {
 	@Test
 	def void testGetTodasLasTareas() {
 		val responseEntity = mockMvc.perform(MockMvcRequestBuilders.get("/tareas")).andReturn.response
-		val tareas = responseEntity.contentAsString.fromJsonToList(Tarea)
+		val tareas = fromJsonToList(responseEntity.contentAsString, Tarea)
 		assertEquals(200, responseEntity.status)
 		assertEquals(tareas.size, 2)
 	}
@@ -65,7 +62,7 @@ class TareasControllerTest {
 		val responseEntity = mockMvc.perform(
 			MockMvcRequestBuilders.get("/tareas/search").content(mapper.writeValueAsString(getTarea))).andReturn.
 			response
-		val tareas = responseEntity.contentAsString.fromJsonToList(Tarea)
+		val tareas = fromJsonToList(responseEntity.contentAsString, Tarea)
 		assertEquals(200, responseEntity.status)
 		assertTrue(tareas.exists[tarea|tarea.descripcion.equals(getTarea.descripcion)])
 	}
@@ -77,7 +74,7 @@ class TareasControllerTest {
 		val responseEntity = mockMvc.perform(
 			MockMvcRequestBuilders.get("/tareas/search").content(mapper.writeValueAsString(tareaBusqueda))).andReturn.
 			response
-		val tareas = responseEntity.contentAsString.fromJsonToList(Tarea)
+		val tareas = fromJsonToList(responseEntity.contentAsString, Tarea)
 		assertEquals(200, responseEntity.status)
 		assertTrue(tareas.isEmpty)
 	}
@@ -86,7 +83,7 @@ class TareasControllerTest {
 	@Test
 	def void testBuscarTareaPorIdOk() {
 		val responseEntity = mockMvc.perform(MockMvcRequestBuilders.get("/tareas/" + tarea.id)).andReturn.response
-		val tarea = responseEntity.contentAsString.fromJson(Tarea)
+		val tarea = fromJson(responseEntity.contentAsString, Tarea)
 		assertEquals(200, responseEntity.status)
 		assertEquals(tarea.descripcion, "Desarrollar componente de envio de mails")
 	}
@@ -119,7 +116,7 @@ class TareasControllerTest {
 			response
 		assertEquals(200, responseEntityPut.status)
 		val responseEntityGet = mockMvc.perform(MockMvcRequestBuilders.get("/tareas/" + tarea.id)).andReturn.response
-		val tareaActualizada = responseEntityGet.contentAsString.fromJson(Tarea)
+		val tareaActualizada = fromJson(responseEntityGet.contentAsString, Tarea)
 		assertEquals(200, responseEntityGet.status)
 		assertEquals(tareaActualizada.porcentajeCumplimiento, tareaBody.porcentajeCumplimiento)
 	}
@@ -153,22 +150,6 @@ class TareasControllerTest {
 			fecha = LocalDate.now
 			iteracion = "Iteración 1"
 			porcentajeCumplimiento = 0
-		]
-	}
-
-	static def <T extends Object> fromJson(String json, Class<T> expectedType) {
-		mapper.readValue(json, expectedType)
-	}
-
-	static def <T extends Object> List<T> fromJsonToList(String json, Class<T> expectedType) {
-		val type = mapper.getTypeFactory().constructCollectionType(List, expectedType)
-		mapper.readValue(json, type)
-	}
-
-	static def mapper() {
-		new ObjectMapper => [
-			configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-			configure(SerializationFeature.INDENT_OUTPUT, true)
 		]
 	}
 
