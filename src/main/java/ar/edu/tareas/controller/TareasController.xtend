@@ -46,7 +46,8 @@ class TareasController {
 	}
 
 	@GetMapping("/tareas/search")
-	def buscar(@RequestBody Tarea tareaBusqueda) {
+	def buscar(@RequestBody String body) {
+		val tareaBusqueda = mapper.readValue(body, Tarea)
 		val encontrada = repoTareas.searchByExample(tareaBusqueda)
 		ResponseEntity.ok(encontrada)
 	}
