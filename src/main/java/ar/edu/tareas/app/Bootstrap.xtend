@@ -4,13 +4,11 @@ import ar.edu.tareas.repos.RepoTareas
 import java.time.LocalDate
 import ar.edu.tareas.repos.RepoUsuarios
 import ar.edu.tareas.domain.Usuario
+import org.springframework.beans.factory.InitializingBean
+import org.springframework.stereotype.Service
 
-class Bootstrap {
-
-	def void run() {
-		crearUsuarios
-		crearTareas
-	}
+@Service
+class Bootstrap implements InitializingBean {
 
 	def void crearTareas() {
 		RepoTareas.instance => [
@@ -34,4 +32,10 @@ class Bootstrap {
 		]
 
 	}
+
+	override afterPropertiesSet() throws Exception {
+		crearUsuarios
+		crearTareas
+	}
+
 }

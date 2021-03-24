@@ -8,7 +8,6 @@ import org.springframework.context.annotation.ComponentScan
 @ComponentScan(basePackages=#["ar.edu.tareas"])
 class TareasApplication {
 	def static void main(String[] args) {
-		new Bootstrap => [run]
 		SpringApplication.run(TareasApplication, args)
 	}
 }
