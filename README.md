@@ -19,7 +19,6 @@ En TareasApplication levantamos el servidor [Tomcat](https://tomcat.apache.org/)
 
 ```xtend
  def static void main(String[] args) {
-     new Bootstrap => [run]
      SpringApplication.run(TareasApplication, args)
  }
 ```
@@ -133,28 +132,20 @@ Veamos los métodos get:
 ```xtend
 @GetMapping("/tareas")
 def tareas() {
-    try {
-        val tareas = RepoTareas.instance.allInstances
-        ResponseEntity.ok(tareas)
-    } catch (Exception e) {
-        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
-    }
+	val tareas = repoTareas.allInstances
+	ResponseEntity.ok(tareas)
 }
 
 @GetMapping("/tareas/{id}")
 def tareaPorId(@PathVariable Integer id) {
-	try {
-		if (id === 0) {
-			return ResponseEntity.badRequest.body('''Debe ingresar el parámetro id''')
-		}
-		val tarea = RepoTareas.instance.searchById(id)
-		if (tarea === null) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body('''No se encontró la tarea de id <«id»>''')
-		}
-		ResponseEntity.ok(tarea)
-	} catch (RuntimeException e) {
-		ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
+	if (id === 0) {
+		throw new ResponseStatusException(HttpStatus.BAD_REQUEST, '''Debe ingresar el parámetro id''');
 	}
+	val tarea = repoTareas.searchById(id)
+	if (tarea === null) {
+		throw new ResponseStatusException(HttpStatus.NOT_FOUND, '''No se encontró la tarea de id <«id»>''');
+	}
+	ResponseEntity.ok(tarea)
 }
 ```
 
@@ -180,22 +171,24 @@ Ahora veremos el método que permite actualizar una tarea:
 
 ```xtend
 @PutMapping("/tareas/{id}")
-def actualizar(@RequestBody String body, @PathVariable Integer id) {
+	def actualizar(@RequestBody String body, @PathVariable Integer id) {
 	try {
 		if (id === null || id === 0) {
-			return ResponseEntity.badRequest.body('''Debe ingresar el parámetro id''')
+			throw new BusinessException('''Debe ingresar el parámetro id''')
 		}
 		val actualizada = mapper.readValue(body, Tarea)
 
+		val String nombreAsignatario = mapper.readValue(body, ObjectNode).get("asignadoA").asText
+
+		actualizada.asignarA(repoUsuarios.getAsignatario(nombreAsignatario))
+
 		if (id != actualizada.id) {
-			return ResponseEntity.badRequest.body("Id en URL distinto del id que viene en el body")
+			throw new BusinessException("Id en URL distinto del id que viene en el body")
 		}
-		RepoTareas.instance.update(actualizada)
+		repoTareas.update(actualizada)
 		ResponseEntity.ok(actualizada)
 	} catch (BusinessException e) {
-		ResponseEntity.badRequest.body(e.message)
-	} catch (Exception e) {
-		ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
+		throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.message);
 	}
 }
 ```
@@ -205,11 +198,11 @@ La annotation @PutMapping define la ruta "/tareas/{id}" como método http PUT. L
 - el identificador o id, dentro de la ruta, puesto entre llaves ({id}). Para el caso de http://localhost:9000/tareas/2, el valor 2 se asigna al parametro id del método actualizar. La anotación @PathVariable indicá que el paramétro id va a estar ligado a un parámetro de la URL.
 - por otra parte, la annotation @RequestBody dentro del parámetro del método actualizar permite recibir un JSON y asignarlo a la variable body. 
 
-La implementación del método actualizar requiere transformar el body (JSON) al objeto Tarea. Así como agregamos dos properties para la serialización de una Tarea (fecha y asignadoA), también agregamos otras dos properties con el mismo nombre para la deserialización. 
+La implementación del método actualizar requiere transformar el body (JSON) al objeto Tarea. Así como agregamos dos properties para la serialización de una Tarea (fecha y asignadoA), agregamos una property para la deserialización de la fecha pero no para el asignatario, porque hay que buscarlo en el repo (y no queremos hacerlo desde la clase Usuario).
 
-Una va a asignarle al atributo fecha la fecha que vino convertida a LocalDate. La otra va a buscar el asginatario en el repo de usuarios y asignarlo al atributo asignatario.
+La property fecha va a asignarle al atributo fecha la fecha que vino (como String) convertida a LocalDate.
 
-Una vez que se actualiza, se envía el status 200 y la tarea actualizada serializada a JSON. En caso de haber un error, o bien si no se encuentra el elemento a actualizar, dado que no podemos tirar una excepción dentro del contexto del server, devolvemos un status 400 (Bad Request). Cualquier otra excepción que no es del negocio, es un error de programa, corresponde devolver 500 (internal server error).
+Una vez que se actualiza, se envía el status 200 y la tarea actualizada serializada a JSON. En caso de haber un error de negocio lanzamos la excepción  ```new ResponseStatusException(HttpStatus.BAD_REQUEST, e.message)``` y la aplicación va a devolver un status 400 (Bad Request) con la informacón del error. Cualquier otra excepción que no es del negocio, es un error de programa, corresponde devolver 500 (internal server error), que es lo que va a devolver Spring Boot por defecto.
 
 ## Diagrama general de la arquitectura
 
