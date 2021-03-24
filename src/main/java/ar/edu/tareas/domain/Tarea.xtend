@@ -1,7 +1,6 @@
 package ar.edu.tareas.domain
 
 import ar.edu.tareas.errors.BusinessException
-import ar.edu.tareas.repos.RepoUsuarios
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.LocalDate
@@ -64,16 +63,6 @@ class Tarea extends Entity {
 			return ""
 		}
 		asignatario.nombre
-	}
-
-	@JsonProperty("asignadoA")
-	def void asignarA(String nuevoAsignado) {
-		if (!nuevoAsignado.nullOrEmpty) {
-			val asignatario = RepoUsuarios.instance.getAsignatario(nuevoAsignado)
-			if (asignatario !== null) {
-				asignarA(asignatario)
-			}
-		}
 	}
 
 	@JsonProperty("fecha")

@@ -1,6 +1,5 @@
 package ar.edu.tareas.app
 
-import ar.edu.tareas.controller.TareasController
 import ar.edu.tareas.domain.Tarea
 import ar.edu.tareas.domain.Usuario
 import ar.edu.tareas.repos.RepoTareas
@@ -16,7 +15,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.json.AutoConfigureJsonTesters
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 
@@ -24,15 +22,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertTrue
 
 @AutoConfigureJsonTesters
-@ContextConfiguration(classes=TareasController)
 @WebMvcTest
 @DisplayName("Dado un controller de tareas")
 class TareasControllerTest {
 
 	@Autowired
 	MockMvc mockMvc
-	RepoTareas repoTareas = RepoTareas.instance
-	RepoUsuarios repoUsuarios = RepoUsuarios.instance
+	@Autowired
+	RepoTareas repoTareas
+	@Autowired
+	RepoUsuarios repoUsuarios
 	Usuario usuario
 	Tarea tarea
 
@@ -99,7 +98,7 @@ class TareasControllerTest {
 		assertEquals(400, responseEntity.status)
 		assertEquals("Debe ingresar el parámetro id", responseEntity.errorMessage)
 	}
-	
+
 	@DisplayName("si se pide una tarea con un id que no existe se produce un error")
 	@Test
 	def void testBuscarTareaPorIdInexistente() {

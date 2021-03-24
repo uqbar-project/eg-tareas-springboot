@@ -4,24 +4,17 @@ import ar.edu.tareas.domain.Tarea
 import java.time.LocalDate
 import org.apache.commons.collections15.Predicate
 import org.uqbar.commons.model.CollectionBasedRepo
+import org.springframework.stereotype.Repository
+import ar.edu.tareas.domain.Usuario
 
+@Repository
 class RepoTareas extends CollectionBasedRepo<Tarea> {
 
-	static RepoTareas repoTareas
-
-	def static RepoTareas getInstance() {
-		if (repoTareas === null) {
-			repoTareas = new RepoTareas
-		}
-		repoTareas
-	}
-
-	private new() {
-	}
-
-	def crearTarea(String unaDescripcion, String responsable, LocalDate date, String unaIteracion, int cumplimiento) {
+	def crearTarea(String unaDescripcion, Usuario responsable, LocalDate date, String unaIteracion, int cumplimiento) {
 		new Tarea => [
-			asignarA(responsable)
+			if (responsable !== null) {
+				asignarA(responsable)
+			}
 			descripcion = unaDescripcion
 			fecha = date ?: LocalDate.now
 			iteracion = unaIteracion
@@ -67,6 +60,6 @@ class RepoTareas extends CollectionBasedRepo<Tarea> {
 	}
 
 	override searchById(int id) {
-		this.allInstances.findFirst [ tarea | tarea.id === id ]
+		this.allInstances.findFirst[tarea|tarea.id === id]
 	}
 }

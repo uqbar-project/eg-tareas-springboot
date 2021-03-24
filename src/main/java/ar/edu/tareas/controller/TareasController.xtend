@@ -3,8 +3,11 @@ package ar.edu.tareas.controller
 import ar.edu.tareas.domain.Tarea
 import ar.edu.tareas.errors.BusinessException
 import ar.edu.tareas.repos.RepoTareas
+import ar.edu.tareas.repos.RepoUsuarios
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.CrossOrigin
@@ -18,10 +21,15 @@ import org.springframework.web.server.ResponseStatusException
 @RestController
 @CrossOrigin
 class TareasController {
+	
+	@Autowired
+	RepoTareas repoTareas
+	@Autowired
+	RepoUsuarios repoUsuarios
 
 	@GetMapping("/tareas")
 	def tareas() {
-		val tareas = RepoTareas.instance.allInstances
+		val tareas = repoTareas.allInstances
 		ResponseEntity.ok(tareas)
 	}
 
@@ -30,7 +38,7 @@ class TareasController {
 		if (id === 0) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, '''Debe ingresar el parámetro id''');
 		}
-		val tarea = RepoTareas.instance.searchById(id)
+		val tarea = repoTareas.searchById(id)
 		if (tarea === null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, '''No se encontró la tarea de id <«id»>''');
 		}
@@ -40,7 +48,7 @@ class TareasController {
 	@GetMapping("/tareas/search")
 	def buscar(@RequestBody String body) {
 		val tareaBusqueda = mapper.readValue(body, Tarea)
-		val encontrada = RepoTareas.instance.searchByExample(tareaBusqueda)
+		val encontrada = repoTareas.searchByExample(tareaBusqueda)
 		ResponseEntity.ok(encontrada)
 	}
 
@@ -51,10 +59,15 @@ class TareasController {
 				throw new BusinessException('''Debe ingresar el parámetro id''')
 			}
 			val actualizada = mapper.readValue(body, Tarea)
+
+			val String nombreAsignatario = mapper.readValue(body, ObjectNode).get("asignadoA").asText
+			
+			actualizada.asignarA(repoUsuarios.getAsignatario(nombreAsignatario))
+			
 			if (id != actualizada.id) {
 				throw new BusinessException("Id en URL distinto del id que viene en el body")
 			}
-			RepoTareas.instance.update(actualizada)
+			repoTareas.update(actualizada)
 			ResponseEntity.ok(actualizada)
 		} catch (BusinessException e) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.message);

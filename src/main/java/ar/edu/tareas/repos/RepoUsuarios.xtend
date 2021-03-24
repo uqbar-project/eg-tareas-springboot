@@ -3,20 +3,10 @@ package ar.edu.tareas.repos
 import ar.edu.tareas.domain.Usuario
 import org.apache.commons.collections15.Predicate
 import org.uqbar.commons.model.CollectionBasedRepo
+import org.springframework.stereotype.Repository
 
+@Repository
 class RepoUsuarios extends CollectionBasedRepo<Usuario> {
-
-	static RepoUsuarios repoUsuarios
-
-	def static RepoUsuarios getInstance() {
-		if (repoUsuarios === null) {
-			repoUsuarios = new RepoUsuarios
-		}
-		repoUsuarios
-	}
-
-	private new() {
-	}
 
 	override createExample() {
 		new Usuario
