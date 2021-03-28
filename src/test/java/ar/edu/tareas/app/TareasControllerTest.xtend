@@ -11,12 +11,13 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.json.AutoConfigureJsonTesters
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 
+import static ar.edu.tareas.controller.JsonHelpers.*
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertTrue
-import static ar.edu.tareas.controller.JsonHelpers.*
 
 @AutoConfigureJsonTesters
 @WebMvcTest
@@ -60,8 +61,11 @@ class TareasControllerTest {
 	@Test
 	def void testBuscarTareasPorDescripcion() {
 		val responseEntity = mockMvc.perform(
-			MockMvcRequestBuilders.get("/tareas/search").content(mapper.writeValueAsString(getTarea))).andReturn.
-			response
+			MockMvcRequestBuilders
+			.get("/tareas/search")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(toJson(getTarea))
+		).andReturn.response
 		val tareas = fromJsonToList(responseEntity.contentAsString, Tarea)
 		assertEquals(200, responseEntity.status)
 		assertTrue(tareas.exists[tarea|tarea.descripcion.equals(getTarea.descripcion)])
@@ -72,8 +76,11 @@ class TareasControllerTest {
 	def void testBuscarTareasPorDescripcionNoMatch() {
 		val tareaBusqueda = new Tarea => [descripcion = "Esta tarea no existe"]
 		val responseEntity = mockMvc.perform(
-			MockMvcRequestBuilders.get("/tareas/search").content(mapper.writeValueAsString(tareaBusqueda))).andReturn.
-			response
+			MockMvcRequestBuilders
+			.get("/tareas/search")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(toJson(tareaBusqueda))
+		).andReturn.response
 		val tareas = fromJsonToList(responseEntity.contentAsString, Tarea)
 		assertEquals(200, responseEntity.status)
 		assertTrue(tareas.isEmpty)
@@ -112,8 +119,11 @@ class TareasControllerTest {
 			porcentajeCumplimiento = 70
 		]
 		val responseEntityPut = mockMvc.perform(
-			MockMvcRequestBuilders.put("/tareas/" + tarea.id).content(mapper.writeValueAsString(tareaBody))).andReturn.
-			response
+			MockMvcRequestBuilders
+			.put("/tareas/" + tarea.id)
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(toJson(tareaBody))
+		).andReturn.response
 		assertEquals(200, responseEntityPut.status)
 		val responseEntityGet = mockMvc.perform(MockMvcRequestBuilders.get("/tareas/" + tarea.id)).andReturn.response
 		val tareaActualizada = fromJson(responseEntityGet.contentAsString, Tarea)
@@ -126,8 +136,11 @@ class TareasControllerTest {
 	def void testActualizarUnaTareaDistintosIdsException() {
 		val tareaBody = getTarea => [id = tarea.id]
 		val responseEntityPut = mockMvc.perform(
-			MockMvcRequestBuilders.put("/tareas/" + (tarea.id + 1)).content(mapper.writeValueAsString(tareaBody))).
-			andReturn.response
+			MockMvcRequestBuilders
+			.put("/tareas/" + (tarea.id + 1))
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(toJson(tareaBody))
+		).andReturn.response
 		assertEquals(400, responseEntityPut.status)
 		assertEquals("Id en URL distinto del id que viene en el body", responseEntityPut.errorMessage)
 	}
@@ -137,8 +150,11 @@ class TareasControllerTest {
 	def void testActualizarUnaTareaDatosInvalidosException() {
 		val tareaBody = getTarea => [id = tarea.id descripcion = ""]
 		val responseEntityPut = mockMvc.perform(
-			MockMvcRequestBuilders.put("/tareas/" + tarea.id).content(mapper.writeValueAsString(tareaBody))).andReturn.
-			response
+			MockMvcRequestBuilders
+			.put("/tareas/" + tarea.id)
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(toJson(tareaBody))
+		).andReturn.response
 		assertEquals(400, responseEntityPut.status)
 		assertEquals("Debe ingresar descripcion", responseEntityPut.errorMessage)
 	}

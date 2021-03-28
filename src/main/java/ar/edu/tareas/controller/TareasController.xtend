@@ -46,8 +46,7 @@ class TareasController {
 	}
 
 	@GetMapping("/tareas/search")
-	def buscar(@RequestBody String body) {
-		val tareaBusqueda = mapper.readValue(body, Tarea)
+	def buscar(@RequestBody Tarea tareaBusqueda) {
 		val encontrada = repoTareas.searchByExample(tareaBusqueda)
 		ResponseEntity.ok(encontrada)
 	}
@@ -58,9 +57,10 @@ class TareasController {
 			if (id === null || id === 0) {
 				throw new BusinessException('''Debe ingresar el parámetro id''')
 			}
-			val actualizada = mapper.readValue(body, Tarea)
 
-			val String nombreAsignatario = mapper.readValue(body, ObjectNode).get("asignadoA").asText
+			val Tarea actualizada = fromJson(body, Tarea)
+
+			val String nombreAsignatario = fromJson(body, ObjectNode).get("asignadoA").asText
 
 			actualizada.asignarA(repoUsuarios.getAsignatario(nombreAsignatario))
 
