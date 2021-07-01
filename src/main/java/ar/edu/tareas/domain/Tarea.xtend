@@ -19,17 +19,10 @@ class Tarea extends Entity {
 	String iteracion
 	int porcentajeCumplimiento
 	@JsonIgnore Usuario asignatario
-	@NotBlank(message="La fecha es obligatoria")
 	@JsonIgnore LocalDate fecha
 
 	new() {
 		initialize()
-	}
-
-	new(String descripcion, LocalDate fecha) {
-		initialize()
-		this.descripcion = descripcion
-		this.fecha = fecha
 	}
 
 	def void initialize() {

@@ -126,8 +126,10 @@
 							<goal>testCompile</goal>
 						</goals>
 						<configuration>
-							<outputDirectory>${project.build.directory}/xtend-gen/main</outputDirectory>
-							<testOutputDirectory>${project.build.directory}/xtend-gen/test</testOutputDirectory>
+							<outputDirectory>${project.build.directory}/xtend-gen/main
+							</outputDirectory>
+							<testOutputDirectory>${project.build.directory}/xtend-gen/test
+							</testOutputDirectory>
 						</configuration>
 					</execution>
 				</executions>
@@ -139,6 +141,34 @@
 				<configuration>
 					<additionalparam>-Xdoclint:none</additionalparam>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.7</version>
+				<configuration>
+					<excludes>
+						<exclude>**/TareasApplication.class</exclude>
+						<exclude>**/ServletInitializer.class</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>jacoco-report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>target/jacoco-report</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
