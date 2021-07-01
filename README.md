@@ -1,6 +1,6 @@
 # Spring Boot - Tareas pendientes de un equipo de Desarrollo
 
-[![Build Status](https://travis-ci.com/uqbar-project/eg-tareas-springboot.svg?branch=master)](https://travis-ci.com/uqbar-project/eg-tareas-springboot)
+[![build](https://github.com/uqbar-project/eg-tareas-springboot/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/uqbar-project/eg-tareas-springboot/actions/workflows/build.yml)
 
 ## Dominio
 
