@@ -11,9 +11,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertTrue
-import static ar.edu.tareas.controller.JsonHelpers.*
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @AutoConfigureJsonTesters
 @WebMvcTest
@@ -40,11 +40,11 @@ class UsuariosControllerTest {
 	@DisplayName("se pueden obtener todos las usuarios")
 	@Test
 	def void testGetTodosLosUsuarios() {
-		val responseEntity = mockMvc.perform(MockMvcRequestBuilders.get("/usuarios")).andReturn.response
-		val usuarios = fromJsonToList(responseEntity.contentAsString, Usuario)
-		assertEquals(200, responseEntity.status)
-		assertEquals(usuarios.size, 5)
-		assertTrue(usuarios.exists[usuario|usuario.nombre.equals("Fernando Dodino")])
+		mockMvc
+			.perform(MockMvcRequestBuilders.get("/usuarios"))
+			.andExpect(status.isOk)
+			.andExpect(content.contentType("application/json"))
+			.andExpect(jsonPath("$.length()").value(5))
 	}
 
 }

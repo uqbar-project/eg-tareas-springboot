@@ -16,8 +16,9 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 
 import static ar.edu.tareas.controller.JsonHelpers.*
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertTrue
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @AutoConfigureJsonTesters
 @WebMvcTest
@@ -51,112 +52,90 @@ class TareasControllerTest {
 	@DisplayName("se pueden obtener todas las tareas")
 	@Test
 	def void testGetTodasLasTareas() {
-		val responseEntity = mockMvc.perform(MockMvcRequestBuilders.get("/tareas")).andReturn.response
-		val tareas = fromJsonToList(responseEntity.contentAsString, Tarea)
-		assertEquals(200, responseEntity.status)
-		assertEquals(tareas.size, 2)
+		mockMvc
+			.perform(MockMvcRequestBuilders.get("/tareas"))
+			.andExpect(status.isOk)
+			.andExpect(content.contentType("application/json"))
+			.andExpect(jsonPath("$.length()").value(2))
 	}
 
 	@DisplayName("se pueden pedir las tareas que contengan cierta descripcion")
 	@Test
 	def void testBuscarTareasPorDescripcion() {
-		val responseEntity = mockMvc.perform(
-			MockMvcRequestBuilders
-			.get("/tareas/search")
-			.contentType(MediaType.APPLICATION_JSON)
-			.content(toJson(getTarea))
-		).andReturn.response
-		val tareas = fromJsonToList(responseEntity.contentAsString, Tarea)
-		assertEquals(200, responseEntity.status)
-		assertTrue(tareas.exists[tarea|tarea.descripcion.equals(getTarea.descripcion)])
+		val tareaBusqueda = getTarea
+		mockMvc
+			.perform(MockMvcRequestBuilders.get("/tareas/search")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(toJson(tareaBusqueda)))
+			.andExpect(status.isOk)
+			.andExpect(content.contentType("application/json"))
+			.andExpect(jsonPath("$.length()").value(1))
+			.andExpect(jsonPath("$.[0].descripcion").value(tareaBusqueda.descripcion))
 	}
 
 	@DisplayName("se pueden pedir tareas que contengan cierta descripcion y que no se encuentre ninguna")
 	@Test
 	def void testBuscarTareasPorDescripcionNoMatch() {
 		val tareaBusqueda = new Tarea => [descripcion = "Esta tarea no existe"]
-		val responseEntity = mockMvc.perform(
-			MockMvcRequestBuilders
-			.get("/tareas/search")
-			.contentType(MediaType.APPLICATION_JSON)
-			.content(toJson(tareaBusqueda))
-		).andReturn.response
-		val tareas = fromJsonToList(responseEntity.contentAsString, Tarea)
-		assertEquals(200, responseEntity.status)
-		assertTrue(tareas.isEmpty)
+		mockMvc
+			.perform(
+				MockMvcRequestBuilders
+				.get("/tareas/search")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(toJson(tareaBusqueda)))
+			.andExpect(status.isOk)
+			.andExpect(content.contentType("application/json"))
+			.andExpect(jsonPath("$.length()").value(0))
 	}
 
 	@DisplayName("se puede obtener una tarea por su id")
 	@Test
 	def void testBuscarTareaPorIdOk() {
-		val responseEntity = mockMvc.perform(MockMvcRequestBuilders.get("/tareas/" + tarea.id)).andReturn.response
-		val tarea = fromJson(responseEntity.contentAsString, Tarea)
-		assertEquals(200, responseEntity.status)
-		assertEquals(tarea.descripcion, "Desarrollar componente de envio de mails")
-	}
-
-	@DisplayName("si se pide una tarea con un id inválido se devuelve bad request")
-	@Test
-	def void testBuscarTareaPorIdInvalido() {
-		val responseEntity = mockMvc.perform(MockMvcRequestBuilders.get("/tareas/0")).andReturn.response
-		assertEquals(400, responseEntity.status)
-		assertEquals("Debe ingresar el parámetro id", responseEntity.errorMessage)
+		mockMvc
+			.perform(MockMvcRequestBuilders.get("/tareas/" + tarea.id))
+			.andExpect(status.isOk)
+			.andExpect(content.contentType("application/json"))
+			.andExpect(jsonPath("$.id").value(tarea.id))
+			.andExpect(jsonPath("$.descripcion").value(tarea.descripcion))
 	}
 
 	@DisplayName("si se pide una tarea con un id que no existe se produce un error")
 	@Test
 	def void testBuscarTareaPorIdInexistente() {
-		val responseEntity = mockMvc.perform(MockMvcRequestBuilders.get("/tareas/20000")).andReturn.response
-		assertEquals(404, responseEntity.status)
-		assertEquals("No se encontró la tarea de id <20000>", responseEntity.errorMessage)
+		mockMvc
+			.perform(MockMvcRequestBuilders.get("/tareas/20000"))
+			.andExpect(status.notFound)
 	}
 
 	@DisplayName("actualizar una tarea a un valor válido actualiza correctamente")
 	@Test
 	def void testActualizarUnaTareaOk() {
-		val tareaBody = getTarea => [
+		val tareaValida = getTarea => [
 			id = tarea.id
 			porcentajeCumplimiento = 70
 		]
-		val responseEntityPut = mockMvc.perform(
-			MockMvcRequestBuilders
-			.put("/tareas/" + tarea.id)
-			.contentType(MediaType.APPLICATION_JSON)
-			.content(toJson(tareaBody))
-		).andReturn.response
-		assertEquals(200, responseEntityPut.status)
-		val responseEntityGet = mockMvc.perform(MockMvcRequestBuilders.get("/tareas/" + tarea.id)).andReturn.response
-		val tareaActualizada = fromJson(responseEntityGet.contentAsString, Tarea)
-		assertEquals(200, responseEntityGet.status)
-		assertEquals(tareaActualizada.porcentajeCumplimiento, tareaBody.porcentajeCumplimiento)
-	}
-
-	@DisplayName("si se intenta actualizar una tarea y no coinciden los ids de la url y el body se produce bad request")
-	@Test
-	def void testActualizarUnaTareaDistintosIdsException() {
-		val tareaBody = getTarea => [id = tarea.id]
-		val responseEntityPut = mockMvc.perform(
-			MockMvcRequestBuilders
-			.put("/tareas/" + (tarea.id + 1))
-			.contentType(MediaType.APPLICATION_JSON)
-			.content(toJson(tareaBody))
-		).andReturn.response
-		assertEquals(400, responseEntityPut.status)
-		assertEquals("Id en URL distinto del id que viene en el body", responseEntityPut.errorMessage)
+		mockMvc
+			.perform(
+				MockMvcRequestBuilders
+				.put("/tareas/" + tarea.id)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(toJson(tareaValida)))
+			.andExpect(status.isOk)
+			.andExpect(content.contentType("application/json"))
+			.andExpect(jsonPath("$.porcentajeCumplimiento").value('70'))
 	}
 
 	@DisplayName("si se intenta actualizar una tarea con datos inválidos se produce bad request")
 	@Test
 	def void testActualizarUnaTareaDatosInvalidosException() {
-		val tareaBody = getTarea => [id = tarea.id descripcion = ""]
-		val responseEntityPut = mockMvc.perform(
-			MockMvcRequestBuilders
-			.put("/tareas/" + tarea.id)
-			.contentType(MediaType.APPLICATION_JSON)
-			.content(toJson(tareaBody))
-		).andReturn.response
-		assertEquals(400, responseEntityPut.status)
-		assertEquals("Debe ingresar descripcion", responseEntityPut.errorMessage)
+		val tareaInvalida = getTarea => [id = tarea.id descripcion = ""]
+		mockMvc
+			.perform(
+				MockMvcRequestBuilders
+				.put("/tareas/" + tarea.id)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(toJson(tareaInvalida)))
+			.andExpect(status.badRequest)
 	}
 
 	def getTarea() {

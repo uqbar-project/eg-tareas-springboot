@@ -1,11 +1,11 @@
 package ar.edu.tareas.repos
 
 import ar.edu.tareas.domain.Tarea
+import ar.edu.tareas.domain.Usuario
 import java.time.LocalDate
 import org.apache.commons.collections15.Predicate
-import org.uqbar.commons.model.CollectionBasedRepo
 import org.springframework.stereotype.Repository
-import ar.edu.tareas.domain.Usuario
+import org.uqbar.commons.model.CollectionBasedRepo
 
 @Repository
 class RepoTareas extends CollectionBasedRepo<Tarea> {
@@ -52,11 +52,6 @@ class RepoTareas extends CollectionBasedRepo<Tarea> {
 
 	def tareasPendientes() {
 		allInstances.filter[estaPendiente].toList
-	}
-
-	override update(Tarea tarea) {
-		tarea.validar
-		super.update(tarea)
 	}
 
 	override searchById(int id) {

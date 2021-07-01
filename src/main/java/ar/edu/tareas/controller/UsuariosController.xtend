@@ -10,14 +10,13 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @CrossOrigin
 class UsuariosController {
-	
+
 	@Autowired
 	RepoUsuarios repoUsuarios
 
 	@GetMapping("/usuarios")
 	def usuarios() {
 		ResponseEntity.ok(repoUsuarios.allInstances)
-
 	}
 
 }
