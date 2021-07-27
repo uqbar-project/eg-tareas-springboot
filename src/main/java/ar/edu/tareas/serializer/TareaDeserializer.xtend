@@ -10,8 +10,12 @@ import com.fasterxml.jackson.databind.node.IntNode
 import com.fasterxml.jackson.databind.node.TextNode
 import java.io.IOException
 import java.time.LocalDate
+import org.springframework.beans.factory.annotation.Autowired
 
 class TareaDeserializer extends StdDeserializer<Tarea> {
+	
+	@Autowired
+	RepoUsuarios repoUsuarios
 	
 	new() {
 		super(Tarea)
@@ -32,7 +36,7 @@ class TareaDeserializer extends StdDeserializer<Tarea> {
 			}
 			val nodoAsignatario = node.get("asignadoA") as TextNode
 			if (nodoAsignatario !== null) {
-				asignatario = RepoUsuarios.instance.getAsignatario(nodoAsignatario.asText)
+				asignatario = repoUsuarios.getAsignatario(nodoAsignatario.asText)
 			}
 			val nodoFecha = node.get("fecha") as TextNode
 			if (nodoFecha !== null) {

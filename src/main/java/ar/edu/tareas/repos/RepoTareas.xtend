@@ -3,21 +3,11 @@ package ar.edu.tareas.repos
 import ar.edu.tareas.domain.Tarea
 import java.time.LocalDate
 import org.apache.commons.collections15.Predicate
+import org.springframework.stereotype.Repository
 import org.uqbar.commons.model.CollectionBasedRepo
 
+@Repository
 class RepoTareas extends CollectionBasedRepo<Tarea> {
-
-	static RepoTareas repoTareas
-
-	def static RepoTareas getInstance() {
-		if (repoTareas === null) {
-			repoTareas = new RepoTareas
-		}
-		repoTareas
-	}
-
-	private new() {
-	}
 
 	def crearTarea(String unaDescripcion, String responsable, LocalDate date, String unaIteracion, int cumplimiento) {
 		new Tarea => [

@@ -1,6 +1,5 @@
 package ar.edu.tareas.app
 
-import ar.edu.tareas.controller.UsuariosController
 import ar.edu.tareas.domain.Usuario
 import ar.edu.tareas.repos.RepoUsuarios
 import com.fasterxml.jackson.databind.DeserializationFeature
@@ -13,22 +12,23 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.json.AutoConfigureJsonTesters
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertTrue
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @AutoConfigureJsonTesters
-@ContextConfiguration(classes=UsuariosController)
 @WebMvcTest
 @DisplayName("Dado un controller de usuarios")
 class UsuariosControllerTest {
 
 	@Autowired
 	MockMvc mockMvc
-	RepoUsuarios repoUsuarios = RepoUsuarios.instance
+	
+	@Autowired
+	RepoUsuarios repoUsuarios
 
 	@BeforeEach
 	def void init() {
@@ -42,14 +42,14 @@ class UsuariosControllerTest {
 		]
 	}
 
-	@DisplayName("se pueden obtener todos las usuarios")
+	@DisplayName("se pueden obtener todes les usuaries")
 	@Test
 	def void testGetTodosLosUsuarios() {
-		val responseEntity = mockMvc.perform(MockMvcRequestBuilders.get("/usuarios")).andReturn.response
-		val usuarios = responseEntity.contentAsString.fromJsonToList(Usuario)
-		assertEquals(200, responseEntity.status)
-		assertEquals(usuarios.size, 5)
-		assertTrue(usuarios.exists[usuario|usuario.nombre.equals("Fernando Dodino")])
+		mockMvc
+			.perform(MockMvcRequestBuilders.get("/usuarios"))
+			.andExpect(status.isOk)
+			.andExpect(content.contentType("application/json"))
+			.andExpect(jsonPath("$.length()").value(5))
 	}
 
 	static def <T extends Object> List<T> fromJsonToList(String json, Class<T> expectedType) {

@@ -1,7 +1,6 @@
 package ar.edu.tareas.domain
 
 import ar.edu.tareas.errors.BusinessException
-import ar.edu.tareas.repos.RepoUsuarios
 import ar.edu.tareas.serializer.TareaDeserializer
 import ar.edu.tareas.serializer.TareaSerializer
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
@@ -71,10 +70,7 @@ class Tarea extends Entity {
 
 	def void asignarA(String nuevoAsignado) {
 		if (!nuevoAsignado.nullOrEmpty) {
-			val asignatario = RepoUsuarios.instance.getAsignatario(nuevoAsignado)
-			if (asignatario !== null) {
-				asignarA(asignatario)
-			}
+			asignarA(asignatario)
 		}
 	}
 
