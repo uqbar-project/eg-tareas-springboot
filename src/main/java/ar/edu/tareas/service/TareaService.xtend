@@ -39,11 +39,11 @@ class TareaService {
 	}
 
 	def actualizar(Integer id, Tarea tareaInput) {
-		tareaInput.validar
 		val tareaRepo = tareaPorId(id)
 		val nombreAsignatario = tareaInput.asignatario.nombre
 		tareaInput.asignatario = !nombreAsignatario.empty ? repoUsuarios.getAsignatario(nombreAsignatario)
-		validarYActualizar(tareaInput)
+		tareaRepo.actualizar(tareaInput)
+		validarYActualizar(tareaRepo)
 	}
 
 }

@@ -1,6 +1,6 @@
 # Spring Boot - Tareas pendientes de un equipo de Desarrollo
 
-[![build](https://github.com/uqbar-project/eg-tareas-springboot/actions/workflows/build.yml/badge.svg?branch=custom-serializer)](https://github.com/uqbar-project/eg-tareas-springboot/actions/workflows/build.yml) ![Coverage](./.github/badges/jacoco.svg)
+[![build](https://github.com/uqbar-project/eg-tareas-springboot/actions/workflows/build.yml/badge.svg?branch=custom-serializer)](https://github.com/uqbar-project/eg-tareas-springboot/actions/workflows/build.yml) ![Coverage](./.github/badges/jacoco.svg?extra=1)
 
 
 ## Otros mecanismos de serialización

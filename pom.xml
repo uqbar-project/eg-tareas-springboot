@@ -155,6 +155,7 @@
 				<configuration>
 					<excludes>
 						<exclude>**/*Application.class</exclude>
+						<exclude>**/Bootstrap.class</exclude>
 						<exclude>**/ServletInitializer.class</exclude>
 					</excludes>
 				</configuration>

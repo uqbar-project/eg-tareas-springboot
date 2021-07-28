@@ -87,6 +87,13 @@ class Tarea extends Entity {
 		this.fecha = LocalDate.parse(fecha, formatter)
 	}
 
+	def actualizar(Tarea tareaInput) {
+		descripcion = tareaInput.descripcion ?: descripcion
+		iteracion = tareaInput.iteracion ?: iteracion
+		asignatario = tareaInput.asignatario
+		porcentajeCumplimiento = tareaInput.porcentajeCumplimiento
+	}
+	
 	def static formatter() {
 		DateTimeFormatter.ofPattern(DATE_PATTERN)
 	}
