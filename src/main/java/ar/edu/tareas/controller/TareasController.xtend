@@ -3,7 +3,6 @@ package ar.edu.tareas.controller
 import ar.edu.tareas.domain.Tarea
 import ar.edu.tareas.service.TareaService
 import io.swagger.annotations.ApiOperation
-import javax.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.CrossOrigin
@@ -42,8 +41,8 @@ class TareasController {
 
 	@PutMapping("/tareas/{id}")
 	@ApiOperation("Permite actualizar la información de una tarea")
-	def actualizar(@PathVariable Integer id, @RequestBody @Valid Tarea tareaInput) {
-		val actualizada = tareaService.actualizar(id, tareaInput)
+	def actualizar(@PathVariable Integer id, @RequestBody Tarea tareaBody) {
+		val actualizada = tareaService.actualizar(id, tareaBody)
 		ResponseEntity.ok(actualizada)
 	}
 
