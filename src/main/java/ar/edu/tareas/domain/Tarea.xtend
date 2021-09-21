@@ -83,11 +83,12 @@ class Tarea extends Entity {
 		DateTimeFormatter.ofPattern(DATE_PATTERN)
 	}
 
-	def actualizar(Tarea tareaInput) {
-		descripcion = tareaInput.descripcion ?: descripcion
-		iteracion = tareaInput.iteracion ?: iteracion
-		asignatario = tareaInput.asignatario
-		porcentajeCumplimiento = tareaInput.porcentajeCumplimiento
+	def actualizar(Tarea otraTarea) {
+		descripcion = otraTarea.descripcion
+		iteracion = otraTarea.iteracion
+		porcentajeCumplimiento = otraTarea.porcentajeCumplimiento
+		asignatario = otraTarea.asignatario
+		fecha = otraTarea.fecha
 	}
 
 }
