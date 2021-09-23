@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import net.sf.oval.constraint.NotBlank
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.uqbar.commons.model.Entity
 
@@ -14,7 +13,6 @@ class Tarea extends Entity {
 	static int TAREA_COMPLETA = 100
 	static String DATE_PATTERN = "dd/MM/yyyy"
 
-	@NotBlank(message="La descripción es obligatoria")
 	String descripcion
 	String iteracion
 	int porcentajeCumplimiento
@@ -85,11 +83,12 @@ class Tarea extends Entity {
 		DateTimeFormatter.ofPattern(DATE_PATTERN)
 	}
 
-	def actualizar(Tarea tareaInput) {
-		descripcion = tareaInput.descripcion ?: descripcion
-		iteracion = tareaInput.iteracion ?: iteracion
-		asignatario = tareaInput.asignatario
-		porcentajeCumplimiento = tareaInput.porcentajeCumplimiento
+	def actualizar(Tarea otraTarea) {
+		descripcion = otraTarea.descripcion
+		iteracion = otraTarea.iteracion
+		porcentajeCumplimiento = otraTarea.porcentajeCumplimiento
+		asignatario = otraTarea.asignatario
+		fecha = otraTarea.fecha
 	}
 
 }

@@ -4,6 +4,7 @@ import ar.edu.tareas.domain.Usuario
 import org.apache.commons.collections15.Predicate
 import org.uqbar.commons.model.CollectionBasedRepo
 import org.springframework.stereotype.Repository
+import ar.edu.tareas.errors.NotFoundException
 
 @Repository
 class RepoUsuarios extends CollectionBasedRepo<Usuario> {
@@ -27,7 +28,11 @@ class RepoUsuarios extends CollectionBasedRepo<Usuario> {
 	}
 
 	def getAsignatario(String nombreAsignatario) {
-		searchByExample(new Usuario(nombreAsignatario))?.head
+		val usuariosByExample = searchByExample(new Usuario(nombreAsignatario))
+		if (usuariosByExample.empty) {
+			throw new NotFoundException('''No se encontró el usuario <«nombreAsignatario»>''');
+		}
+		return usuariosByExample.head
 	}
 
 }
