@@ -76,20 +76,20 @@ Es interesante ver la definición **del objeto de negocio Tarea** ya que en luga
 ```xtend
 @Accessors
 class Tarea extends Entity {
-	static String DATE_PATTERN = "dd/MM/yyyy"
-	...
-	@JsonIgnore LocalDate fecha
+  static String DATE_PATTERN = "dd/MM/yyyy"
+  ...
+  @JsonIgnore LocalDate fecha
 
-	...
-	
-	@JsonProperty("fecha")
-	def getFechaAsString() {
-		formatter.format(this.fecha)
-	}
-	
-	def formatter() {
-		DateTimeFormatter.ofPattern(DATE_PATTERN)
-	}
+  ...
+  
+  @JsonProperty("fecha")
+  def getFechaAsString() {
+    formatter.format(this.fecha)
+  }
+  
+  def formatter() {
+    DateTimeFormatter.ofPattern(DATE_PATTERN)
+  }
 ```
 
 Del mismo modo, la propiedad asignatario se oculta para publicar otra llamada "asignadoA" que es un String:
@@ -97,16 +97,16 @@ Del mismo modo, la propiedad asignatario se oculta para publicar otra llamada "a
 ```xtend
 @Accessors
 class Tarea extends Entity {
-	@JsonIgnore Usuario asignatario
-	...
+  @JsonIgnore Usuario asignatario
+  ...
   
-	@JsonProperty("asignadoA")
-	def String getAsignadoA() {
-		if (asignatario === null) {
-			return ""
-		}
-		asignatario.nombre
-	}
+  @JsonProperty("asignadoA")
+  def String getAsignadoA() {
+    if (asignatario === null) {
+      return ""
+    }
+    asignatario.nombre
+  }
 }
 ```
 Surgen las preguntas: ¿por qué?, ¿es necesario?. 
@@ -131,21 +131,16 @@ Veamos los métodos get:
 
 ```xtend
 @GetMapping("/tareas")
+@ApiOperation("Devuelve todas las tareas")
 def tareas() {
-	val tareas = repoTareas.allInstances
-	ResponseEntity.ok(tareas)
+  ResponseEntity.ok(tareaService.tareas)
 }
 
 @GetMapping("/tareas/{id}")
+@ApiOperation("Permite conocer la información de una tarea por identificador")
 def tareaPorId(@PathVariable Integer id) {
-	if (id === 0) {
-		throw new ResponseStatusException(HttpStatus.BAD_REQUEST, '''Debe ingresar el parámetro id''');
-	}
-	val tarea = repoTareas.searchById(id)
-	if (tarea === null) {
-		throw new ResponseStatusException(HttpStatus.NOT_FOUND, '''No se encontró la tarea de id <«id»>''');
-	}
-	ResponseEntity.ok(tarea)
+  val tarea = tareaService.tareaPorId(id)
+  ResponseEntity.ok(tarea)
 }
 ```
 
@@ -154,7 +149,7 @@ La annotation @GetMapping("/tareas") define
 - que utilizará el método http GET
 - para la ruta "/tareas" desde el servidor donde se publique el _jar_ (por eso para invocarla desde Postman es http://localhost:9000/tareas)
 
-La búsqueda 1) se delega al repositorio, y la respuesta 2) se serializa a JSON en base a las definiciones del objeto de negocio (usando una instancia del ObjectMapper de Jackson). Por último, 3) el método ok devuelve un estado http 200 + el JSON con la lista de tareas.
+La búsqueda 1) se delega primero al service y luego al repositorio, y la respuesta 2) se serializa a JSON en base a las definiciones del objeto de negocio (usando una instancia del ObjectMapper de Jackson). Por último, 3) el método ok devuelve un estado http 200 + el JSON con la lista de tareas.
 
 En el caso de la búsqueda específica, los códigos de respuesta http son:
 
@@ -171,25 +166,22 @@ Ahora veremos el método que permite actualizar una tarea:
 
 ```xtend
 @PutMapping("/tareas/{id}")
-	def actualizar(@RequestBody String body, @PathVariable Integer id) {
-	try {
-		if (id === null || id === 0) {
-			throw new BusinessException('''Debe ingresar el parámetro id''')
-		}
-		val actualizada = mapper.readValue(body, Tarea)
+@ApiOperation("Permite actualizar la información de una tarea")
+def actualizar(@PathVariable Integer id, @RequestBody @Valid Tarea tareaInput) {
+  val actualizada = tareaService.actualizar(id, tareaInput)
+  ResponseEntity.ok(actualizada)
+}
+```
 
-		val String nombreAsignatario = mapper.readValue(body, ObjectNode).get("asignadoA").asText
+El service a su vez hace lo siguiente:
 
-		actualizada.asignarA(repoUsuarios.getAsignatario(nombreAsignatario))
-
-		if (id != actualizada.id) {
-			throw new BusinessException("Id en URL distinto del id que viene en el body")
-		}
-		repoTareas.update(actualizada)
-		ResponseEntity.ok(actualizada)
-	} catch (BusinessException e) {
-		throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.message);
-	}
+```xtend
+def actualizar(Integer id, Tarea tareaInput) {
+  val tareaRepo = tareaPorId(id)
+  val nombreAsignatario = tareaInput.asignatario.nombre
+  tareaInput.asignatario = !nombreAsignatario.empty ? repoUsuarios.getAsignatario(nombreAsignatario)
+  tareaRepo.actualizar(tareaInput)
+  validarYActualizar(tareaRepo)
 }
 ```
 
@@ -203,6 +195,63 @@ La implementación del método actualizar requiere transformar el body (JSON) al
 La property fecha va a asignarle al atributo fecha la fecha que vino (como String) convertida a LocalDate.
 
 Una vez que se actualiza, se envía el status 200 y la tarea actualizada serializada a JSON. En caso de haber un error de negocio lanzamos la excepción  ```new ResponseStatusException(HttpStatus.BAD_REQUEST, e.message)``` y la aplicación va a devolver un status 400 (Bad Request) con la informacón del error. Cualquier otra excepción que no es del negocio, es un error de programa, corresponde devolver 500 (internal server error), que es lo que va a devolver Spring Boot por defecto.
+
+## Manejo de errores
+
+Una cosa interesante es que cuando el service valida que una tarea exista:
+
+```xtend
+def tareaPorId(Integer id) {
+  val tarea = repoTareas.searchById(id)
+  if (tarea === null) {
+    throw new NotFoundException('''No se encontró la tarea de id <«id»>''');
+  }
+  tarea
+}
+```
+
+la excepción NotFoundException se asocia a un código de respuesta 404:
+
+```xtend
+@ResponseStatus(NOT_FOUND)
+class NotFoundException extends RuntimeException {
+
+  new(String message) {
+    super(message)
+  }
+}
+```
+
+de la misma manera que se modela una excepción de negocio (BusinessException) como BadRequest.
+
+### Variante con exception handlers
+
+Otra forma de modelar esto es dejar las excepciones sin anotaciones, y definir una clase exception handler que le avise a Springboot cómo debe actuar en caso de recibir una excepción:
+
+```xtend
+@Order(Ordered.HIGHEST_PRECEDENCE)
+@ControllerAdvice
+class RestExceptionHandler extends ResponseEntityExceptionHandler {
+
+  @ExceptionHandler(BusinessException)
+  def protected handleBusinessException(BusinessException e) {
+    ResponseEntity.badRequest.body(e.message)
+  }
+
+  @ExceptionHandler(NotFoundException)
+  def protected handleNotFoundException(NotFoundException e) {
+    ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.message)
+  }
+
+  @ExceptionHandler(Exception)
+  def protected handleException(Exception e) {
+    ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
+  }
+
+}
+```
+
+De la misma manera que vamos desde excepciones más particulares a más generales, el exception handler va definiendo comportamiento para cada una de las excepciones a partir de métodos `handleException`.
 
 ## Diagrama general de la arquitectura
 
